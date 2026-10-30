@@ -19,6 +19,7 @@ from . import DemoData
 GENRES = ["Romance", "Mystery", "Fantasy", "Sci-fi", "Slice of life", "Comedy", "Drama", "Horror", "Adventure"]
 RATINGS = ["Everyone", "Teen", "Mature"]
 ENDING_KINDS = ["true", "good", "neutral", "bad", "secret"]
+GAMES = ["timing", "tictactoe", "memory", "reaction", "find", "mash", "simon", "whack", "code", "rps"]
 MAX_JSON = 900 * 1024
 ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 VAR = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,31}$")
@@ -40,6 +41,10 @@ STEP_FIELDS = {
     "wait": {"secs": "num"},
     "input": {"var": "var", "prompt": 200, "dflt": 60},
     "card": {"title": 120, "sub": 200},
+    # a mini-game: which game, difficulty 0-2, its three colours, where winning / losing leads (None = carry on),
+    # whether readers may retry or skip, and a yes/no variable that remembers the result
+    "game": {"game": 20, "diff": "num", "title": 80, "prompt": 200, "c1": "hex", "c2": "hex", "c3": "hex",
+             "win": "id", "lose": "id", "retry": "bool", "skip": "bool", "var": "var"},
     "note": {"text": 1000},
 }
 COMMON_FIELDS = {"k": "id", "if": 300}
@@ -74,6 +79,8 @@ def _field(v, spec):
             return 0.0
     if spec == "bool":
         return bool(v)
+    if spec == "hex":
+        return v if isinstance(v, str) and HEX.match(v) else ""
     return None
 
 
@@ -92,6 +99,9 @@ def _step(st):
     for k, spec in list(STEP_FIELDS[st["t"]].items()) + list(COMMON_FIELDS.items()):
         if k in st:
             out[k] = _field(st[k], spec)
+    if out["t"] == "game":
+        out["game"] = out.get("game") if out.get("game") in GAMES else "timing"
+        out["diff"] = int(min(2, out.get("diff") or 0))
     return out
 
 
@@ -310,8 +320,9 @@ def get_story(story_id):
     imgs = app_tables.images.search(tables.order_by("created", ascending=False), story=r)
     c = card(r, me)
     c["changes"] = bool(r["published"]) and r["published"] != r["data"]
-    return C.ok(story=c, data=r["data"] or blank_story(), images=[_image(i) for i in imgs], limits=C.limits(r["owner"]),
-                genres=GENRES, ratings=RATINGS)
+    from . import Sounds
+    return C.ok(story=c, data=r["data"] or blank_story(), images=[_image(i) for i in imgs], sounds=Sounds.list_for(r),
+                limits=C.limits(r["owner"]), genres=GENRES, ratings=RATINGS)
 
 
 @anvil.server.callable(require_user=True)
@@ -396,10 +407,11 @@ def duplicate_story(story_id):
     now = C.now()
     text, cover = json.dumps(r["data"] or blank_story()), r["cover"] or ""
     imgs = list(app_tables.images.search(story=r))
+    snds = list(app_tables.sounds.search(story=r))
     keys = {}
-    for img in imgs:  # each copied picture gets its own key, and the copy's story points at the new keys
-        keys[img["key"]] = "i" + secrets.token_hex(12)
-        text = text.replace('"%s"' % img["key"], '"%s"' % keys[img["key"]])
+    for f in imgs + snds:  # each copied file gets its own key, and the copy's story points at the new keys
+        keys[f["key"]] = f["key"][0] + secrets.token_hex(12)
+        text = text.replace('"%s"' % f["key"], '"%s"' % keys[f["key"]])
     data = json.loads(text)
     copy = app_tables.stories.add_row(owner=me, slug=new_slug(), title=C.text("Copy of " + r["title"], 80), blurb=r["blurb"],
                                       genre=r["genre"], tags=r["tags"] or [], rating=r["rating"], cover=keys.get(cover, cover), data=data,
@@ -409,11 +421,14 @@ def duplicate_story(story_id):
         app_tables.images.add_row(owner=me, story=copy, key=keys[img["key"]], name=img["name"], kind=img["kind"],
                                   media=img["media"], width=img["width"], height=img["height"], bytes=img["bytes"],
                                   created=now, is_demo=False)
+    for snd in snds:
+        app_tables.sounds.add_row(owner=me, story=copy, key=keys[snd["key"]], name=snd["name"], kind=snd["kind"], media=snd["media"],
+                                  seconds=snd["seconds"], bytes=snd["bytes"], created=now, is_demo=False)
     return C.ok(story=card(copy, me))
 
 
 def delete_story_rows(r):
-    for t in (app_tables.likes, app_tables.reports, app_tables.images):
+    for t in (app_tables.likes, app_tables.reports, app_tables.images, app_tables.sounds):
         for x in t.search(story=r):
             x.delete()
     r.delete()

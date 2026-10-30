@@ -4,7 +4,7 @@ document in the shape Stories.clean_story keeps.
 
 They show off the features: name input, conditional lines, choice effects, locked choices with hints,
 "once" choices around a hub scene, a timed choice, conditional jumps, CGs, chapter cards, music moods,
-sound effects and several kinds of ending.
+sound effects, mini-games and several kinds of ending.
 """
 _n = [0]
 
@@ -64,6 +64,11 @@ def scene(sid, name, x, y, steps, choices=None, nxt=None, ending=None, timer=0, 
             "ending": ending, "timer": timer, "timeout": timeout, "note": note}
 
 
+def game(kind, title, prompt, colors, diff=1, win=None, lose=None, var="", retry=True, skip=True):
+    return step("game", game=kind, diff=diff, title=title, prompt=prompt, c1=colors[0], c2=colors[1], c3=colors[2],
+                win=win, lose=lose, retry=retry, skip=skip, var=var)
+
+
 def end(kind, title, text):
     return {"kind": kind, "title": title, "text": text}
 
@@ -86,7 +91,8 @@ def cherry():
         "vars": [{"name": "player", "type": "text", "init": "Aki", "note": "The reader's name"},
                  {"name": "courage", "type": "number", "init": 0, "note": "Goes up each time you reach out to Mira"},
                  {"name": "saw_sketch", "type": "flag", "init": False, "note": "You admitted you peeked at her drawings"},
-                 {"name": "promised", "type": "flag", "init": False, "note": "You promised to come on Friday"}],
+                 {"name": "promised", "type": "flag", "init": False, "note": "You promised to come on Friday"},
+                 {"name": "caught", "type": "flag", "init": False, "note": "You caught the last sketch (mini-game)"}],
         "start": "c_start",
         "scenes": [
             scene("c_start", "Petals on the path", 0, 0, [
@@ -102,9 +108,11 @@ def cherry():
             ], [choice("c1", "Chase the sketches down with her", "c_chase", effects=[eff("courage", "+", 1)]),
                 choice("c2", "Keep walking. You're already late.", "c_late")]),
             scene("c_chase", "Paper chase", -240, 190, [
+                game("timing", "Catch the last sketch!", "Stop the marker on the flying page.", ["#ff4f8b", "#3cc6c0", "#ffffff"], diff=0, var="caught"),
                 step("sfx", name="sparkle"),
                 show("mira", "happy"),
-                say("mira", "You caught the last one! You're fast, um..."),
+                say("mira", "You caught the last one! You're fast, um...", cond="caught"),
+                say("mira", "It got away... no wait, there! Got it! Thanks for trying, um...", cond="not caught"),
                 say("you", "[player]."),
                 say("mira", "[player]! I'm Mira. Thank you, *really*. These are for the art club exhibition."),
                 show("mira", "shy", fx="none"),
@@ -174,6 +182,7 @@ def train():
         "chars": [char("ren", "Ren", "#8a93d6", "ren", EXPR), char("kuro", "Kuro", "#ffd24a", "kuro", ["neutral", "happy", "surprised"]),
                   {"id": "cond", "name": "Conductor", "color": "#8fe3df", "poses": [{"name": "neutral", "img": "demo:stranger-neutral"}, {"name": "smile", "img": "demo:stranger-smile"}]}],
         "vars": [{"name": "clues", "type": "number", "init": 0, "note": "Things you noticed on the platform"},
+                 {"name": "sharp_eyes", "type": "flag", "init": False, "note": "Spotted the glint in time (mini-game)"},
                  {"name": "ticket", "type": "flag", "init": False, "note": "Found the ticket under the bench"},
                  {"name": "fed_cat", "type": "flag", "init": False, "note": "Made friends with Kuro"}],
         "start": "t_start",
@@ -202,10 +211,12 @@ def train():
                 say("ren", "Home. Whose home?", "sad"),
             ], nxt="t_hub"),
             scene("t_bench", "Under the bench", -130, 380, [
+                nar("Something glints between the slats. Where was it?"),
+                game("find", "Something glints...", "Find the glinting symbol before the lights flicker.", ["#8fe3df", "#ffd24a", "#1c1a3a"], diff=1, var="sharp_eyes"),
                 step("sfx", name="chime"),
-                nar("Something glints between the slats."),
                 setv("ticket", "=", True), setv("clues", "+", 1),
                 say("ren", "A ticket. One way. No destination printed.", "happy"),
+                say("ren", "Good thing I've got sharp eyes.", "neutral", "sharp_eyes"),
             ], nxt="t_hub"),
             scene("t_cat", "The cat", 130, 380, [
                 show("kuro", "happy", "right", "none"),
@@ -261,7 +272,8 @@ def rooftop():
                      "credits": "Story: Saoirse Vale\nMade with ImgNovella"},
         "chars": [char("sol", "Sol", "#ff9a3c", "sol", EXPR), char("mira", "Mira", "#ff4f8b", "mira", EXPR), char("ren", "Ren", "#8a93d6", "ren", EXPR)],
         "vars": [{"name": "snacks", "type": "number", "init": 0, "note": "Snacks brought to the club"},
-                 {"name": "title", "type": "text", "init": "Member", "note": "Your club title"}],
+                 {"name": "title", "type": "text", "init": "Member", "note": "Your club title"},
+                 {"name": "beat_sol", "type": "flag", "init": False, "note": "Won Sol's tic-tac-toe challenge"}],
         "start": "r_start",
         "scenes": [
             scene("r_start", "The proposal", 0, 0, [
@@ -276,6 +288,11 @@ def rooftop():
                 show("sol", "neutral", "right", "none"), show("mira", "surprised", "left"),
                 say("mira", "Is that... allowed?"),
                 say("sol", "It is now that we're a club!", "happy"),
+                say("sol", "Club rule number one: the loser of tic-tac-toe carries the snacks. Ready?"),
+                game("tictactoe", "Sol's challenge", "Beat Sol at tic-tac-toe. Loser carries the snacks!", ["#ff9a3c", "#8a6cff", "#fff5f8"], diff=1, var="beat_sol"),
+                say("sol", "No way! Fine, you're Vice President for real.", "surprised", "beat_sol"),
+                setv("title", "=", "Vice President", "beat_sol"),
+                say("sol", "Ha! Snack duty is yours, [title]!", "happy", "not beat_sol"),
             ], [choice("r3", "Bring strawberry buns for everyone", "r_inspect", effects=[eff("snacks", "+", 3)]),
                 choice("r4", "Bring only your own lunch", "r_inspect")]),
             scene("r_inspect", "The inspection", 0, 380, [
@@ -318,6 +335,8 @@ def library():
             ], [choice("l1", "Follow the cat", "l_shelves", effects=[eff("brave", "=", True)]),
                 choice("l2", "Go home like a normal person", "l_home")]),
             scene("l_shelves", "Between the shelves", -200, 190, [
+                nar("Between two shelves, a door of glowing runes. They flicker in pairs."),
+                game("memory", "The rune door", "Match the runes in pairs to open the door.", ["#8a7ad6", "#ffd24a", "#1c1630"], diff=0, lose="l_home"),
                 step("fx", name="flash"), hide("kuro", "none"), show("mira", "surprised"),
                 say("mira", "You can see the doorway too?"),
                 say("mira", "Welcome to the Unwritten Wing. Every book here is a story nobody finished.", "happy"),

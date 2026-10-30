@@ -117,8 +117,10 @@ def set_setting(key, value):
 # a small "Made with ImgNovella" credit. Pro (granted by an admin in Admin -> Users): bigger pictures, more of
 # everything, and the credit can be turned off. Keep in step with the Pro page (web/pages/pro.html).
 PLANS = {
-    "free": {"label": "Free", "long": 600, "short": 400, "max_kb": 600, "novels": 5, "images": 40, "branding": True},
-    "pro": {"label": "Pro", "long": 1800, "short": 1200, "max_kb": 2500, "novels": 100, "images": 300, "branding": False},
+    "free": {"label": "Free", "long": 600, "short": 400, "max_kb": 600, "novels": 5, "images": 40, "branding": True,
+             "sound_kb": 1024, "sounds": 10},
+    "pro": {"label": "Pro", "long": 1800, "short": 1200, "max_kb": 2500, "novels": 100, "images": 300, "branding": False,
+            "sound_kb": 4096, "sounds": 60},
 }
 
 

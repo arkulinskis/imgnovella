@@ -21,6 +21,7 @@ def admin_overview():
             "published": len([s for s in stories if s["status"] in ("public", "unlisted")]),
             "plays": sum(int(s["plays"] or 0) for s in stories),
             "images": len(app_tables.images.search()),
+            "sounds": len(app_tables.sounds.search()),
             "reports_open": len(app_tables.reports.search(status="open")),
             "demo": {"state": DemoData.state(), "counts": DemoData.counts()}}
 

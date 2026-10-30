@@ -414,6 +414,7 @@
   I.gear = '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>';
   I.undo = '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>';
   I.up = '<path d="m6 15 6-6 6 6"/>';
+  I.game = '<rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="17.5" cy="13.5" r="1"/>';
 
   function brand() {
     return '<a class="ui-brand" href="#" data-go="' + (UI.me ? UI.config.home : UI.config.landing) + '" aria-label="' + esc(UI.config.name) + ' home">' +
@@ -502,9 +503,9 @@
     say: ['Line', 'chat'], bg: ['Background', 'image'], show: ['Show character', 'user'], hide: ['Hide character', 'eyeoff'],
     set: ['Change variable', 'sliders'], jump: ['Jump to scene', 'jump'], cg: ['Illustration (CG)', 'star'], music: ['Music', 'music'],
     sfx: ['Sound', 'bell'], fx: ['Effect', 'sparkle'], wait: ['Pause', 'clock'], input: ['Ask the reader', 'edit'],
-    card: ['Chapter card', 'book'], note: ['Writer\'s note', 'info']
+    card: ['Chapter card', 'book'], note: ['Writer\'s note', 'info'], game: ['Mini-game', 'game']
   };
-  ED.ADD_ORDER = ['say', 'bg', 'show', 'hide', 'set', 'jump', 'cg', 'music', 'sfx', 'fx', 'wait', 'input', 'card', 'note'];
+  ED.ADD_ORDER = ['say', 'bg', 'show', 'hide', 'set', 'jump', 'game', 'cg', 'music', 'sfx', 'fx', 'wait', 'input', 'card', 'note'];
   ED.newStep = function (t, data, scene) {
     var s = { t: t, k: NVT.uid('k') };
     var lastWho = null;
@@ -524,6 +525,11 @@
     if (t === 'input') { var tv = (data.vars || []).filter(function (v) { return v.type === 'text'; })[0]; s.var = tv ? tv.name : ''; s.prompt = 'What\'s your name?'; s.dflt = ''; }
     if (t === 'card') { s.title = 'Chapter 1'; s.sub = ''; }
     if (t === 'note') s.text = '';
+    if (t === 'game') {
+      var pal = NVT.GAME_PALETTES[0];
+      s.game = 'timing'; s.diff = 1; s.title = ''; s.prompt = ''; s.c1 = (data.settings || {}).accent || pal[1]; s.c2 = pal[2]; s.c3 = pal[3];
+      s.win = null; s.lose = null; s.retry = true; s.skip = true; s.var = '';
+    }
     return s;
   };
 
@@ -581,12 +587,14 @@
       else if (x.t === 'show') st.chars[x.char] = { pose: x.pose || (st.chars[x.char] || {}).pose, pos: x.pos || (st.chars[x.char] || {}).pos || 'center' };
       else if (x.t === 'hide') delete st.chars[x.char];
       else if (x.t === 'cg') st.cg = x.img;
-      else if (x.t === 'say') { st.say = x; if (x.pose && st.chars[x.who]) st.chars[x.who].pose = x.pose; }
+      else if (x.t === 'say') { st.say = x; st.game = null; if (x.pose && st.chars[x.who]) st.chars[x.who].pose = x.pose; }
+      else if (x.t === 'game') { st.game = x; st.say = null; }
     }
     var parent = (data.scenes || []).filter(function (s) { return NVT.targets(s).some(function (t) { return t.to === scene.id; }); })[0];
     if (parent) (parent.steps || []).forEach(apply);
-    st.say = null; st.cg = '';
+    st.say = null; st.cg = ''; st.game = null;
     (scene.steps || []).slice(0, upto + 1).forEach(apply);
+    if (st.game && (scene.steps || [])[upto] !== st.game) st.game = null;
     return st;
   }
   ED.preview = function (host, data, scene, upto) {
@@ -608,6 +616,8 @@
       (st.cg ? '<div class="nvp-cg on"><img alt="" src="' + esc(NVT.img(st.cg)) + '"></div>' : '') +
       (st.say ? '<div class="nvp-box' + (who ? '' : ' narration') + '">' + (who ? '<div class="nvp-name" style="--who:' + esc(who.color) + ';--who-ink:' + NV.inkFor(who.color) + '">' + esc(NV.plain(who.name, { player: 'Aki' })) + '</div>' : '') +
         '<div class="nvp-text">' + NV.format(st.say.text || '…', ED.sampleVars(data)).replace(/class="nvp-c"/g, 'class="nvp-c on"') + '</div></div>' : '') +
+      (st.game ? '<div class="nvp-game" style="--g1:' + esc(st.game.c1 || '#ff4f8b') + ';--g2:' + esc(st.game.c2 || '#3cc6c0') + ';--g3:' + esc(st.game.c3 || '#fff') + ';--g3i:' + NV.inkFor(st.game.c3 || '#fff') + ';--g2i:' + NV.inkFor(st.game.c2 || '#3cc6c0') + '"><div class="nvp-g-card"><div class="nvp-g-head"><small>Mini-game</small><h3>' +
+        esc(st.game.title || (NV.GAMES[st.game.game] || ['Mini-game'])[0]) + '</h3><p>' + esc(st.game.prompt || (NV.GAMES[st.game.game] || ['', ''])[1]) + '</p></div><p class="nvp-g-status">' + ['Easy', 'Normal', 'Hard'][st.game.diff || 0] + '</p></div></div>' : '') +
       '</div></div>';
   };
   ED.sampleVars = function (data) {
@@ -689,7 +699,7 @@
   /* ---------------------------------------------------------------- publish */
   ED.publish = function (ctx) {
     // ctx: {story, data, images, save() -> Promise, onDone(story)}
-    var items = NVT.lint(ctx.data, ctx.images), errors = items.filter(function (i) { return i.lvl === 'error'; });
+    var items = NVT.lint(ctx.data, ctx.images, ctx.sounds), errors = items.filter(function (i) { return i.lvl === 'error'; });
     var st = ctx.story, link = location.origin + location.pathname + '#play/' + st.slug;
     var m = UI.modal('<h2>' + UI.icon('globe') + ' Publish "' + esc(st.title) + '"</h2>' +
       (errors.length ? '<div class="ui-error" style="margin-bottom:12px">Fix ' + UI.plural(errors.length, 'problem') + ' first, so readers don\'t get stuck.</div>' + ED.lintHtml(errors)
@@ -716,6 +726,11 @@
       });
     });
   };
+  /* try a mini-game from the editor */
+  ED.tryGame = function (x, accent) {
+    var m = UI.modal('<div data-gh style="min-height:380px;display:grid;place-items:center"></div>', { onclose: function () { if (run) run.destroy(); } });
+    var run = NV.playGame(m.el.querySelector('[data-gh]'), x, accent, function (win) { UI.toast(win ? 'You won! (In the story: ' + (x.win ? 'goes to the "win" scene' : 'carries on') + ')' : 'You lost. (In the story: ' + (x.lose ? 'goes to the "lose" scene' : 'carries on') + ')', win ? 'ok' : ''); m.close(); });
+  };
   ED.copy = function (text) {
     (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { UI.toast('Link copied', 'ok'); }, function () { UI.toast('Select the link and copy it'); });
   };
@@ -724,7 +739,7 @@
   ED.exportGame = function (ctx) {
     // ctx: {story, data, images, limits, me}
     var st = ctx.story, pro = ctx.limits.plan === 'pro', year = new Date().getFullYear();
-    var items = NVT.lint(ctx.data, ctx.images), errors = items.filter(function (i) { return i.lvl === 'error'; });
+    var items = NVT.lint(ctx.data, ctx.images, ctx.sounds), errors = items.filter(function (i) { return i.lvl === 'error'; });
     var portrait = (ctx.data.settings || {}).orientation !== 'landscape';
     var m = UI.modal('<h2>' + UI.icon('download') + ' Package &amp; sell</h2>' +
       '<p class="muted">Download "' + esc(st.title) + '" as a complete game: one HTML file with every picture, the player, saves, music and endings built in. It works offline in any browser, so you can sell it anywhere.</p>' +
@@ -763,7 +778,7 @@
       if (v.license) data.settings.credits = (data.settings.credits ? data.settings.credits + '\n\n' : '') + v.license;
       var meta = { title: st.title, author: ctx.me.name, blurb: st.blurb, slug: st.slug };
       var work = NVT.buildGame(meta, data, { branding: pro ? !!v.branding : true, license: v.license }, function (d, n) {
-        bar.style.width = Math.round(d / n * 90) + '%'; t.textContent = 'Packing pictures: ' + d + ' of ' + n;
+        bar.style.width = Math.round(d / n * 90) + '%'; t.textContent = 'Packing pictures and sounds: ' + d + ' of ' + n;
       }).then(function (html) {
         var name = NVT.slugify(st.title);
         bar.style.width = '100%';
@@ -967,6 +982,16 @@ function NovellaRuntime() {
   RT.TRACKS = TRACKS; RT.SFX = SFX;
   var Audio = (function () {
     var ctx = null, master, mus, fx, filt, cur = null, timer = null, next = 0, step = 0, noiseSrc = null, vols = { music: 0.6, sfx: 0.8 };
+    var fileEl = null;
+    function fade(el, to, ms, then) {
+      var from = el.volume, t0 = Date.now();
+      var iv = setInterval(function () {
+        var k = Math.min(1, (Date.now() - t0) / ms);
+        try { el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); } catch (e) {}
+        if (k >= 1) { clearInterval(iv); if (then) then(); }
+      }, 40);
+    }
+    function stopFile() { if (fileEl) { var e = fileEl; fileEl = null; fade(e, 0, 500, function () { e.pause(); e.src = ''; }); } }
     function ok() {
       if (!ctx) {
         var AC = window.AudioContext || window.webkitAudioContext;
@@ -980,7 +1005,7 @@ function NovellaRuntime() {
       if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
       return ctx;
     }
-    function apply() { if (mus) { mus.gain.value = vols.music * 0.5; fx.gain.value = vols.sfx * 0.7; } }
+    function apply() { if (mus) { mus.gain.value = vols.music * 0.5; fx.gain.value = vols.sfx * 0.7; } if (fileEl) try { fileEl.volume = vols.music; } catch (e) {} }
     function hz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
     function tone(dest, freq, t, dur, opt) {
       opt = opt || {};
@@ -1030,19 +1055,33 @@ function NovellaRuntime() {
       noiseSrc.connect(f); f.connect(g); g.connect(mus); noiseSrc.start();
     }
     return {
-      music: function (name) {
-        name = TRACKS[name] ? name : '';
+      music: function (name, url) {
+        name = TRACKS[name] || url ? (name || '') : '';
         if (name === cur) return;
         if (timer) { clearInterval(timer); timer = null; }
         if (noiseSrc) { try { noiseSrc.stop(); } catch (e) {} noiseSrc = null; }
+        stopFile();
         cur = name;
+        if (name && !TRACKS[name] && url) {
+          try {
+            var el = new window.Audio(url);
+            el.loop = true; el.volume = 0; fileEl = el;
+            var pr = el.play(); if (pr && pr.catch) pr.catch(function () {});
+            fade(el, vols.music, 900);
+          } catch (e) {}
+          return;
+        }
         if (!name || !ok()) return;
         next = ctx.currentTime + 0.1; step = 0;
         if (TRACKS[name].noise) startNoise();
         schedule(); timer = setInterval(schedule, 60);
       },
       current: function () { return cur; },
-      sfx: function (name) {
+      sfx: function (name, url) {
+        if (!SFX[name]) {
+          if (url) try { var el = new window.Audio(url); el.volume = vols.sfx; var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+          return;
+        }
         if (!ok()) return;
         var t = ctx.currentTime + 0.02;
         switch (name) {
@@ -1058,12 +1097,346 @@ function NovellaRuntime() {
           case 'door': noise(fx, t, 0.5, 500, 0.4, 200); tone(fx, 90, t + 0.35, 0.3, { v: 0.6, to: 50 }); break;
         }
       },
+      beep: function (f, d) { if (!ok()) return; tone(fx, f, ctx.currentTime + 0.01, d || 0.12, { v: 0.16, wave: 'triangle' }); },
       volume: function (v) { if (v) { if (v.music != null) vols.music = v.music; if (v.sfx != null) vols.sfx = v.sfx; apply(); } return vols; },
       unlock: function () { ok(); },
       stop: function () { this.music(''); }
     };
   })();
   RT.audio = Audio;
+
+
+  /* ================================================================== mini-games (a "game" step). Each game draws into `a` and calls
+     g.end(true|false). g gives: diff (0 easy, 1 normal, 2 hard), status(html), beep(freq, secs), after(fn, ms) -> id, cancel(id),
+     every(fn, ms), frame(fn) (runs every animation frame while fn returns true), and g.onKey = fn for keyboard play.
+     Colours come from the step: --g1 main, --g2 accent, --g3 panel (+ --g1i / --g3i readable ink on them). */
+  var VS = String.fromCharCode(0xFE0E);
+  var GL = ['★', '♥', '♦', '♣', '♠', '☀', '☾', '✿', '♪', '☂', '✦', '❄', '⚑', '✈', '⌛', '☘'].map(function (c) { return c + VS; });
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = rnd(i + 1), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  var GAME_META = {
+    timing: ['Perfect timing', 'Stop the marker inside the glowing zone.'],
+    tictactoe: ['Tic-tac-toe', 'Get three in a row before the computer does.'],
+    memory: ['Memory pairs', 'Find every pair before time runs out.'],
+    reaction: ['Quick draw', 'Tap the moment the light changes. Not before!'],
+    find: ['Find it in time', 'Spot the symbol before time runs out.'],
+    mash: ['Button mash', 'Tap as fast as you can!'],
+    simon: ['Repeat the pattern', 'Watch the lights, then play them back.'],
+    whack: ['Whack-a-mole', 'Tap them as they pop up.'],
+    code: ['Crack the code', 'Guess the number: we\'ll tell you higher or lower.'],
+    rps: ['Rock, paper, scissors', 'First to two wins.']
+  };
+  RT.GAMES = GAME_META;
+  var GAMES = {
+    timing: function (a, g) {
+      var zw = [0.24, 0.15, 0.09][g.diff], speed = [0.6, 0.95, 1.4][g.diff], need = [1, 2, 3][g.diff], tries = need + 2, hits = 0, used = 0;
+      a.innerHTML = '<div class="g-track"><i class="g-zone"></i><i class="g-mark"></i></div><button type="button" class="g-btn">Stop!</button>';
+      var zone = a.querySelector('.g-zone'), mark = a.querySelector('.g-mark'), pos = 0, dir = 1, z0 = 0, paused = false, last = performance.now();
+      function place() { z0 = 0.06 + Math.random() * (0.88 - zw); zone.style.left = (z0 * 100) + '%'; zone.style.width = (zw * 100) + '%'; }
+      function upd() { g.status('Hits <b>' + hits + ' / ' + need + '</b> · tries left ' + (tries - used)); }
+      place(); upd();
+      g.frame(function (now) {
+        var dt = Math.min(50, now - last) / 1000; last = now;
+        if (!paused) { pos += dir * speed * dt; if (pos > 1) { pos = 1; dir = -1; } if (pos < 0) { pos = 0; dir = 1; } mark.style.left = (pos * 100) + '%'; }
+        return true;
+      });
+      function stop() {
+        if (paused) return;
+        paused = true; used++;
+        var hit = pos >= z0 - 0.01 && pos <= z0 + zw + 0.01;
+        if (hit) hits++;
+        a.classList.add(hit ? 'g-hit' : 'g-miss'); g.beep(hit ? 880 : 200, 0.15); upd();
+        g.after(function () {
+          a.classList.remove('g-hit', 'g-miss');
+          if (hits >= need) return g.end(true);
+          if (tries - used < need - hits) return g.end(false);
+          place(); paused = false; last = performance.now();
+        }, 650);
+      }
+      a.querySelector('.g-btn').onclick = stop;
+      g.onKey = function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); stop(); } };
+    },
+    tictactoe: function (a, g) {
+      var smart = [0.25, 0.65, 0.9][g.diff], b, draws = 0, busy = false;
+      var L = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+      function won(p) { return L.some(function (l) { return l.every(function (i) { return b[i] === p; }); }); }
+      function find(p) {
+        for (var k = 0; k < L.length; k++) {
+          var l = L[k], mine = l.filter(function (i) { return b[i] === p; }).length, free = l.filter(function (i) { return !b[i]; });
+          if (mine === 2 && free.length === 1) return free[0];
+        }
+        return -1;
+      }
+      function ai() {
+        var free = [], m = -1;
+        b.forEach(function (v, i) { if (!v) free.push(i); });
+        if (Math.random() < smart) { m = find('O'); if (m < 0) m = find('X'); if (m < 0 && !b[4]) m = 4; }
+        if (m < 0) m = free[rnd(free.length)];
+        b[m] = 'O';
+      }
+      function draw() {
+        a.innerHTML = '<div class="g-ttt">' + b.map(function (v, i) {
+          return '<button type="button" data-i="' + i + '" class="' + (v ? 'g-' + v : '') + '" aria-label="Square ' + (i + 1) + '">' + (v === 'X' ? '✕' : v === 'O' ? '◯' : '') + '</button>';
+        }).join('') + '</div>';
+      }
+      function reset() { b = ['', '', '', '', '', '', '', '', '']; busy = false; draw(); g.status('You are <b>✕</b>. Three in a row wins!' + (draws ? ' Draws: ' + draws + ' / 3' : '')); }
+      function tie() { draws++; busy = true; if (draws >= 3) { g.status('Three draws in a row…'); return g.after(function () { g.end(false); }, 700); } g.status('A draw! Again…'); g.after(reset, 900); }
+      a.onclick = function (e) {
+        var t = e.target.closest('[data-i]');
+        if (!t || busy) return;
+        var i = +t.getAttribute('data-i');
+        if (b[i]) return;
+        b[i] = 'X'; g.beep(660, 0.08); draw();
+        if (won('X')) { busy = true; g.status('Three in a row!'); return g.after(function () { g.end(true); }, 500); }
+        if (b.every(Boolean)) return tie();
+        busy = true;
+        g.after(function () {
+          ai(); g.beep(440, 0.08); draw(); busy = false;
+          if (won('O')) { busy = true; g.status('The computer got three in a row.'); return g.after(function () { g.end(false); }, 700); }
+          if (b.every(Boolean)) tie();
+        }, 420);
+      };
+      reset();
+    },
+    memory: function (a, g) {
+      var pairs = [4, 6, 8][g.diff], left = [60, 50, 45][g.diff], sy = shuffle(GL.slice()).slice(0, pairs), cards = shuffle(sy.concat(sy));
+      var open = [], found = 0, lock = false;
+      a.innerHTML = '<div class="g-mem g-n' + cards.length + '">' + cards.map(function (s, i) { return '<button type="button" data-i="' + i + '"><span>' + s + '</span></button>'; }).join('') + '</div>';
+      var btns = a.querySelectorAll('[data-i]');
+      function upd() { g.status('Pairs <b>' + found + ' / ' + pairs + '</b> · ' + left + ' s'); }
+      upd();
+      g.every(function () { left--; upd(); if (left <= 0) g.end(false); }, 1000);
+      a.onclick = function (e) {
+        var t = e.target.closest('[data-i]');
+        if (!t || lock || t.classList.contains('up')) return;
+        t.classList.add('up'); open.push(t); g.beep(520 + open.length * 120, 0.06);
+        if (open.length < 2) return;
+        var x = open[0], y = open[1];
+        open = [];
+        if (cards[+x.getAttribute('data-i')] === cards[+y.getAttribute('data-i')]) {
+          x.classList.add('done'); y.classList.add('done'); found++; upd(); g.beep(990, 0.12);
+          if (found === pairs) g.after(function () { g.end(true); }, 400);
+        } else {
+          lock = true;
+          g.after(function () { x.classList.remove('up'); y.classList.remove('up'); lock = false; }, 750);
+        }
+      };
+      void btns;
+    },
+    reaction: function (a, g) {
+      var limit = [650, 480, 360][g.diff], rounds = 3, need = 2, r = 0, wins = 0, state = 'idle', t0 = 0, armT = null, last = '';
+      a.innerHTML = '<button type="button" class="g-pad">Tap here to start</button>';
+      var pad = a.querySelector('.g-pad');
+      function upd() { g.status('Beat <b>' + limit + ' ms</b> · wins ' + wins + ' / ' + need + ' · round ' + Math.min(r + 1, rounds) + ' / ' + rounds + (last ? ' · ' + last : '')); }
+      function arm() {
+        state = 'wait'; pad.className = 'g-pad g-wait'; pad.textContent = 'Wait for it…';
+        armT = g.after(function () { state = 'go'; pad.className = 'g-pad g-go'; pad.textContent = 'TAP!'; t0 = performance.now(); g.beep(990, 0.1); }, 1100 + Math.random() * 2400);
+      }
+      function next() {
+        upd();
+        g.after(function () {
+          if (wins >= need) return g.end(true);
+          if (wins + (rounds - r) < need) return g.end(false);
+          arm();
+        }, 1100);
+      }
+      function hit() {
+        if (state === 'idle') { arm(); return; }
+        if (state === 'wait') { g.cancel(armT); state = 'done'; r++; last = 'too soon'; pad.className = 'g-pad g-bad'; pad.textContent = 'Too soon!'; g.beep(180, 0.2); next(); return; }
+        if (state === 'go') {
+          var ms = Math.round(performance.now() - t0), good = ms <= limit;
+          state = 'done'; r++; if (good) wins++; last = ms + ' ms';
+          pad.className = 'g-pad ' + (good ? 'g-good' : 'g-bad'); pad.textContent = ms + ' ms ' + (good ? '✓' : '✗');
+          next();
+        }
+      }
+      pad.onpointerdown = function (e) { e.preventDefault(); hit(); };
+      g.onKey = function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); hit(); } };
+      upd();
+    },
+    find: function (a, g) {
+      var n = [12, 20, 30][g.diff], cols = [4, 5, 6][g.diff], left = [25, 20, 15][g.diff], rounds = 3, got = 0;
+      function upd() { g.status('Found <b>' + got + ' / ' + rounds + '</b> · ' + left + ' s'); }
+      function round() {
+        var pool = shuffle(GL.slice()), target = pool[0], others = pool.slice(1, 5 + g.diff * 2), cells = [target];
+        while (cells.length < n) cells.push(others[rnd(others.length)]);
+        cells = shuffle(cells);
+        a.innerHTML = '<div class="g-find-t">Find <b>' + target + '</b></div><div class="g-grid" style="grid-template-columns:repeat(' + cols + ',1fr)">' + cells.map(function (c) {
+          return '<button type="button"' + (c === target ? ' data-t="1"' : '') + ' style="transform:rotate(' + (rnd(40) - 20) + 'deg)" class="gc' + rnd(3) + '">' + c + '</button>';
+        }).join('') + '</div>';
+      }
+      a.onclick = function (e) {
+        var t = e.target.closest('button');
+        if (!t) return;
+        if (t.hasAttribute('data-t')) { got++; g.beep(880, 0.1); upd(); if (got >= rounds) return g.end(true); round(); }
+        else { left = Math.max(0, left - 2); g.beep(180, 0.12); a.classList.remove('g-miss'); void a.offsetWidth; a.classList.add('g-miss'); upd(); }
+      };
+      round(); upd();
+      g.every(function () { left--; upd(); if (left <= 0) g.end(false); }, 1000);
+    },
+    mash: function (a, g) {
+      var need = [18, 28, 38][g.diff], tenths = 50, taps = 0, started = false, over = false;
+      a.innerHTML = '<div class="g-meter"><i></i></div><button type="button" class="g-btn g-big">Tap!</button>';
+      var bar = a.querySelector('.g-meter i');
+      function upd() { g.status('<b>' + taps + ' / ' + need + '</b> taps · ' + (tenths / 10).toFixed(1) + ' s' + (started ? '' : ' (the clock starts on your first tap)')); bar.style.width = Math.min(100, taps / need * 100) + '%'; }
+      function tap() {
+        if (over) return;
+        if (!started) { started = true; g.every(function () { tenths--; upd(); if (tenths <= 0 && !over) { over = true; g.end(taps >= need); } }, 100); }
+        taps++; g.beep(300 + taps * 12, 0.04); upd();
+        if (taps >= need) { over = true; g.after(function () { g.end(true); }, 250); }
+      }
+      a.querySelector('.g-btn').onpointerdown = function (e) { e.preventDefault(); tap(); };
+      g.onKey = function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) tap(); } };
+      upd();
+    },
+    simon: function (a, g) {
+      var target = [3, 5, 7][g.diff], seq = [], pos = 0, input = false, notes = [523, 659, 784, 988];
+      a.innerHTML = '<div class="g-simon">' + [0, 1, 2, 3].map(function (k) { return '<button type="button" class="p' + k + '" data-k="' + k + '" aria-label="Pad ' + (k + 1) + '"></button>'; }).join('') + '</div>';
+      var pads = a.querySelectorAll('[data-k]');
+      function flash(k) { pads[k].classList.add('lit'); g.beep(notes[k], 0.25); g.after(function () { pads[k].classList.remove('lit'); }, 330); }
+      function play() {
+        input = false; seq.push(rnd(4));
+        g.status('Watch… <b>' + seq.length + ' / ' + target + '</b>');
+        var i = 0, gap = [700, 580, 460][g.diff];
+        (function step() {
+          if (i >= seq.length) { input = true; pos = 0; g.status('Your turn! <b>' + seq.length + ' / ' + target + '</b>'); return; }
+          flash(seq[i]); i++; g.after(step, gap);
+        })();
+      }
+      a.onclick = function (e) {
+        var t = e.target.closest('[data-k]');
+        if (!t || !input) return;
+        var k = +t.getAttribute('data-k');
+        flash(k);
+        if (k !== seq[pos]) { input = false; g.status('Oops, that wasn\'t it.'); return g.after(function () { g.end(false); }, 600); }
+        pos++;
+        if (pos === seq.length) { input = false; if (seq.length >= target) return g.after(function () { g.end(true); }, 500); g.after(play, 700); }
+      };
+      g.after(play, 500);
+    },
+    whack: function (a, g) {
+      var need = [8, 11, 14][g.diff], up = [1100, 850, 650][g.diff], left = 20, hits = 0, cur = -1, popT = null;
+      a.innerHTML = '<div class="g-holes">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { return '<button type="button" data-i="' + i + '" aria-label="Hole ' + (i + 1) + '"><i></i></button>'; }).join('') + '</div>';
+      var holes = a.querySelectorAll('[data-i]');
+      function upd() { g.status('Hits <b>' + hits + ' / ' + need + '</b> · ' + left + ' s'); }
+      function pop() {
+        if (cur >= 0) holes[cur].classList.remove('up');
+        var n; do { n = rnd(9); } while (n === cur);
+        cur = n; holes[n].classList.add('up');
+        popT = g.after(pop, up);
+      }
+      a.onpointerdown = function (e) {
+        var t = e.target.closest('[data-i]');
+        if (!t || +t.getAttribute('data-i') !== cur) return;
+        e.preventDefault();
+        hits++; g.beep(760, 0.08); upd();
+        t.classList.remove('up'); t.classList.add('bonk'); g.after(function () { t.classList.remove('bonk'); }, 250);
+        cur = -1; g.cancel(popT);
+        if (hits >= need) return g.end(true);
+        popT = g.after(pop, 260);
+      };
+      upd(); g.after(pop, 500);
+      g.every(function () { left--; upd(); if (left <= 0) g.end(false); }, 1000);
+    },
+    code: function (a, g) {
+      var max = [20, 50, 100][g.diff], tries = [5, 6, 7][g.diff], secret = 1 + rnd(max), used = 0, hist = [];
+      a.innerHTML = '<div class="g-code"><div class="g-code-d">?</div><form><input type="number" min="1" max="' + max + '" inputmode="numeric" aria-label="Your guess" placeholder="1 – ' + max + '"><button type="submit" class="g-btn">Guess</button></form><div class="g-hist"></div></div>';
+      var inp = a.querySelector('input'), disp = a.querySelector('.g-code-d');
+      function upd() { g.status('A number from 1 to ' + max + ' · tries left <b>' + (tries - used) + '</b>'); }
+      a.querySelector('form').onsubmit = function (e) {
+        e.preventDefault();
+        var v = parseInt(inp.value, 10);
+        if (!(v >= 1 && v <= max)) { inp.focus(); return; }
+        used++; inp.value = '';
+        if (v === secret) { disp.textContent = v; disp.classList.add('ok'); g.beep(990, 0.2); return g.after(function () { g.end(true); }, 600); }
+        hist.unshift(v + (v < secret ? ' · higher ↑' : ' · lower ↓'));
+        a.querySelector('.g-hist').innerHTML = hist.map(function (h) { return '<span>' + h + '</span>'; }).join('');
+        g.beep(v < secret ? 400 : 300, 0.1); upd();
+        if (used >= tries) { disp.textContent = secret; disp.classList.add('bad'); return g.after(function () { g.end(false); }, 900); }
+        inp.focus();
+      };
+      upd();
+      g.after(function () { try { inp.focus({ preventScroll: true }); } catch (e) {} }, 80);
+    },
+    rps: function (a, g) {
+      var you = 0, them = 0, last = null, busy = false, M = [['Rock', '✊'], ['Paper', '✋'], ['Scissors', '✌️']];
+      a.innerHTML = '<div class="g-vs"><span data-you>❔</span><b>vs</b><span data-ai>❔</span></div><div class="g-rps">' + M.map(function (m, k) {
+        return '<button type="button" data-k="' + k + '"><span>' + m[1] + '</span>' + m[0] + '</button>';
+      }).join('') + '</div>';
+      function upd(msg) { g.status((msg ? msg + ' · ' : '') + 'You <b>' + you + '</b> – <b>' + them + '</b> Them · first to 2'); }
+      a.onclick = function (e) {
+        var t = e.target.closest('[data-k]');
+        if (!t || busy) return;
+        var k = +t.getAttribute('data-k'), ai = rnd(3);
+        if (g.diff === 0 && Math.random() < 0.25) ai = (k + 2) % 3;
+        if (g.diff === 2 && last != null && Math.random() < 0.45) ai = (last + 1) % 3;
+        last = k;
+        a.querySelector('[data-you]').textContent = M[k][1]; a.querySelector('[data-ai]').textContent = M[ai][1];
+        var res = (k - ai + 3) % 3;
+        if (res === 1) { you++; g.beep(880, 0.1); upd('You win the round'); }
+        else if (res === 2) { them++; g.beep(220, 0.12); upd('They win the round'); }
+        else { g.beep(500, 0.08); upd('A tie'); }
+        if (you >= 2 || them >= 2) { busy = true; g.after(function () { g.end(you >= 2); }, 800); }
+      };
+      upd();
+    }
+  };
+
+  /* the frame around every mini-game: title, instructions, status, skip, and the result card */
+  function gameShell(box, cfg, accent, done) {
+    var meta = GAME_META[cfg.game] || GAME_META.timing, play = GAMES[cfg.game] || GAMES.timing;
+    var c1 = cfg.c1 || accent || '#ff4f8b', c2 = cfg.c2 || '#3cc6c0', c3 = cfg.c3 || '#ffffff';
+    box.style.setProperty('--g1', c1); box.style.setProperty('--g2', c2); box.style.setProperty('--g3', c3);
+    box.style.setProperty('--g1i', inkFor(c1)); box.style.setProperty('--g2i', inkFor(c2)); box.style.setProperty('--g3i', inkFor(c3));
+    var timers = [], loops = [], over = false, api = null;
+    function clear() { timers.forEach(function (t) { clearTimeout(t); clearInterval(t); }); loops.forEach(function (l) { l.on = false; }); timers = []; loops = []; }
+    function start() {
+      clear(); over = false;
+      box.innerHTML = '<div class="nvp-g-card"><div class="nvp-g-head"><small>Mini-game</small><h3>' + esc(cfg.title || meta[0]) + '</h3><p>' + esc(cfg.prompt || meta[1]) + '</p></div>' +
+        '<div class="nvp-g-area"></div><div class="nvp-g-status"></div>' + (cfg.skip !== false ? '<button type="button" class="nvp-g-skip" data-gskip>Skip this game</button>' : '') + '</div>';
+      var area = box.querySelector('.nvp-g-area'), status = box.querySelector('.nvp-g-status');
+      api = {
+        diff: Math.max(0, Math.min(2, +cfg.diff || 0)),
+        status: function (h) { status.innerHTML = h; },
+        beep: function (f, d) { Audio.beep(f, d); },
+        after: function (fn, ms) { var t = setTimeout(function () { if (!over) fn(); }, ms); timers.push(t); return t; },
+        cancel: function (t) { clearTimeout(t); },
+        every: function (fn, ms) { var t = setInterval(function () { if (!over) fn(); }, ms); timers.push(t); return t; },
+        frame: function (fn) { var l = { on: true }; loops.push(l); (function tick(now) { if (!l.on || over) return; if (fn(now) !== false) requestAnimationFrame(tick); })(performance.now()); },
+        end: function (win) { if (over) return; over = true; clear(); result(!!win); },
+        onKey: null
+      };
+      var skip = box.querySelector('[data-gskip]');
+      if (skip) skip.onclick = function () { over = true; clear(); done(false); };
+      try { play(area, api); } catch (e) { console.error(e); api.end(true); }
+    }
+    function result(win) {
+      Audio.sfx(win ? 'sparkle' : 'thud');
+      var card = box.querySelector('.nvp-g-card');
+      card.innerHTML = '<div class="nvp-g-res ' + (win ? 'win' : 'lose') + '"><div class="nvp-g-big">' + (win ? 'You did it!' : 'Not this time…') + '</div>' +
+        '<p>' + esc(cfg.title || meta[0]) + '</p><div class="nvp-g-btns">' +
+        (!win && cfg.retry ? '<button type="button" class="pri" data-gretry>Try again</button>' : '') +
+        '<button type="button" class="' + (!win && cfg.retry ? '' : 'pri') + '" data-gdone>' + (!win && cfg.retry ? 'Carry on anyway' : 'Continue') + '</button></div></div>';
+      card.querySelector('[data-gdone]').onclick = function () { done(win); };
+      var r = card.querySelector('[data-gretry]');
+      if (r) r.onclick = start;
+      setTimeout(function () { var b = card.querySelector('.pri'); if (b) try { b.focus({ preventScroll: true }); } catch (e) {} }, 30);
+    }
+    start();
+    return {
+      key: function (e) { if (!over && api && api.onKey) api.onKey(e); },
+      destroy: function () { over = true; clear(); box.innerHTML = ''; }
+    };
+  }
+  /* the editor's "Try it" preview: a game on its own, outside a story */
+  RT.playGame = function (host, cfg, accent, onDone) {
+    host.innerHTML = '<div class="nvp nvp-portrait nvp-solo" style="--u:' + Math.max(0.8, Math.min(1.2, (host.clientWidth || 360) / 380)).toFixed(3) + 'px"><div class="nvp-game solo"></div></div>';
+    var box = host.querySelector('.nvp-game');
+    var run = gameShell(box, cfg, accent, function (win) { if (onDone) onDone(win); });
+    var key = function (e) { if (e.target.tagName !== 'INPUT') run.key(e); };
+    document.addEventListener('keydown', key);
+    return { destroy: function () { document.removeEventListener('keydown', key); run.destroy(); } };
+  };
 
   /* ================================================================== the player */
   var POS = { farleft: 12, left: 26, center: 50, right: 74, farright: 88 };
@@ -1096,6 +1469,8 @@ function NovellaRuntime() {
     function persistSaves() { store(key + ':saves', saves); }
     Audio.volume({ music: P.prefs.music, sfx: P.prefs.sfx });
     var resolve = opts.resolve || function (k) { return k; };
+    var gameRun = null;
+    function aud(k) { return k && !TRACKS[k] && !SFX[k] ? resolve(k) : ''; }
     var st = null, back = [], gen = 0, typing = null, mode = { auto: false, skip: false, ctrl: false }, autoT = null, waitT = null, timerT = null, destroyed = false;
 
     /* ---------------- DOM */
@@ -1111,6 +1486,7 @@ function NovellaRuntime() {
       '<div class="nvp-box" data-box hidden><div class="nvp-name" data-name></div><div class="nvp-text" data-text></div><div class="nvp-ctc" data-ctc></div></div>' +
       '<div class="nvp-choices" data-choices hidden></div>' +
       '<div class="nvp-timer" data-timer hidden><i></i></div>' +
+      '<div class="nvp-game" data-game hidden></div>' +
       '<div class="nvp-veil" data-veil></div>' +
       '<div class="nvp-card" data-card hidden></div>' +
       '<div class="nvp-qm" data-qm hidden>' +
@@ -1225,7 +1601,7 @@ function NovellaRuntime() {
       setSrc(bgA, st.bg ? resolve(st.bg) : ''); bgA.style.opacity = st.bg ? 1 : 0; bgB.style.opacity = 0; bgFront = bgA;
       Object.keys(st.chars).forEach(function (id) { placeChar(id, 'none'); });
       setCg(st.cg);
-      Audio.music(st.music);
+      Audio.music(st.music, aud(st.music));
       focusSpeaker();
     }
 
@@ -1237,6 +1613,7 @@ function NovellaRuntime() {
       autoT = waitT = timerT = null;
       if (typing) { cancelAnimationFrame(typing.raf); typing = null; }
       $('[data-timer]').hidden = true;
+      if (gameRun) { gameRun.destroy(); gameRun = null; $('[data-game]').hidden = true; }
     }
     function snapshot() { back.push(JSON.stringify(st)); if (back.length > 120) back.shift(); }
     function goScene(id) {
@@ -1286,8 +1663,9 @@ function NovellaRuntime() {
         case 'set': applySet(x); return false;
         case 'jump': if (scenes[x.to]) { goScene(x.to); return true; } return false;
         case 'cg': st.cg = x.img || ''; setCg(st.cg); return false;
-        case 'music': st.music = x.track || ''; Audio.music(st.music); return false;
-        case 'sfx': if (!mode.skip) Audio.sfx(x.name); return false;
+        case 'music': st.music = x.track || ''; Audio.music(st.music, aud(st.music)); return false;
+        case 'sfx': if (!mode.skip) Audio.sfx(x.name, aud(x.name)); return false;
+        case 'game': return game(x);
         case 'fx':
           if (mode.skip) return false;
           if (x.name === 'shake') { stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); return false; }
@@ -1356,6 +1734,22 @@ function NovellaRuntime() {
         if (shown >= spans.length) { done(); return; }
         typing.raf = requestAnimationFrame(tick);
       })(start);
+      return true;
+    }
+    function game(x) {
+      st.i--; snapshot(); st.i++;  // Back from the next line returns to just before the game
+      setMode('skip', false); setMode('auto', false);
+      box.hidden = true; $('[data-qm]').hidden = true;
+      var el = $('[data-game]');
+      el.hidden = false;
+      gameRun = gameShell(el, x, S.accent, function (win) {
+        if (gameRun) gameRun.destroy();
+        gameRun = null; el.hidden = true;
+        if (x.var) st.vars[x.var] = !!win;
+        st.log.push({ who: '', choice: true, text: (x.title || (GAME_META[x.game] || GAME_META.timing)[0]) + (win ? ': won' : ': lost') });
+        var to = win ? x.win : x.lose;
+        if (to && scenes[to]) goScene(to); else run();
+      });
       return true;
     }
     function card(x, my) {
@@ -1464,7 +1858,7 @@ function NovellaRuntime() {
 
     /* ---------------- input: advance, back, modes */
     function advance() {
-      if (!st || !screen.hidden || !choicesEl.hidden) return;
+      if (!st || !screen.hidden || !choicesEl.hidden || gameRun) return;
       if (typing) { var d = typing.done; d(); return; }
       if (autoT) { clearTimeout(autoT); autoT = null; }
       run();
@@ -1606,7 +2000,8 @@ function NovellaRuntime() {
       list.forEach(function (s) {
         var known = !!P.scenes[s.id];
         if (!known) return;
-        var targets = (s.choices || []).map(function (c) { return c.to; }).concat(s.next ? [s.next] : []).concat((s.steps || []).filter(function (x) { return x.t === 'jump'; }).map(function (x) { return x.to; }));
+        var targets = (s.choices || []).map(function (c) { return c.to; }).concat(s.next ? [s.next] : []).concat((s.steps || []).filter(function (x) { return x.t === 'jump'; }).map(function (x) { return x.to; }))
+          .concat((s.steps || []).filter(function (x) { return x.t === 'game'; }).reduce(function (a, x) { return a.concat([x.win, x.lose]); }, []));
         targets.forEach(function (t) { var o = scenes[t]; if (o) edges += '<line x1="' + (s.x - minX) + '" y1="' + (s.y - minY + 22) + '" x2="' + (o.x - minX) + '" y2="' + (o.y - minY - 22) + '"/>'; });
       });
       list.forEach(function (s) {
@@ -1645,7 +2040,7 @@ function NovellaRuntime() {
       var t = e.target;
       var act = t.closest('[data-act]'), q = t.closest('[data-q]'), ch = t.closest('[data-ch]'), slot = t.closest('[data-slot]'), pref = t.closest('[data-pref]');
       Audio.unlock();
-      if (!st && S.title_music && !Audio.current() && screen.classList.contains('scr-title')) Audio.music(S.title_music);
+      if (!st && S.title_music && !Audio.current() && screen.classList.contains('scr-title')) Audio.music(S.title_music, aud(S.title_music));
       if (ch) { e.stopPropagation(); if (!ch.disabled) choose(ch.getAttribute('data-ch')); return; }
       if (slot) { doSlot(slot.getAttribute('data-slot')); return; }
       if (pref) {
@@ -1682,18 +2077,19 @@ function NovellaRuntime() {
         else if (a === 'flow') flowScreen();
         else if (a === 'settings') settingsScreen();
         else if (a === 'credits') show(head('Credits') + '<div class="nvp-credits">' + esc(S.credits).replace(/\n/g, '<br>') + '</div>', 'credits');
-        else if (a === 'title') { Audio.music(S.title_music || ''); titleScreen(); }
+        else if (a === 'title') { Audio.music(S.title_music || '', aud(S.title_music)); titleScreen(); }
         else if (a === 'lastchoice') backToChoice();
         else if (a === 'fullscreen') { var fs = root.requestFullscreen || root.webkitRequestFullscreen; if (document.fullscreenElement) document.exitFullscreen(); else if (fs) fs.call(root); }
         else if (a === 'forget') { P = { endings: {}, cgs: {}, lines: {}, scenes: {}, chose: {}, prefs: P.prefs }; saves = { slots: [] }; persist(); persistSaves(); toast('Progress forgotten'); }
         else if (a === 'close') { if (st) hideScreen(); else titleScreen(); }
         return;
       }
-      if (t.closest('.nvp-screen') || t.closest('.nvp-choices') || t.closest('a')) return;
+      if (t.closest('.nvp-screen') || t.closest('.nvp-choices') || t.closest('.nvp-game') || t.closest('a')) return;
       if (t.closest('[data-stage]')) advance();
     };
     var onKey = function (e) {
       if (e.target.tagName === 'INPUT') return;
+      if (gameRun && screen.hidden) { gameRun.key(e); return; }
       var k = e.key;
       if (k === 'Control' && st) { mode.ctrl = true; setMode('skip', true); return; }
       if (k === 'Escape') { e.preventDefault(); if (!screen.hidden && st) hideScreen(); else if (st) menuScreen(); return; }
@@ -1706,7 +2102,7 @@ function NovellaRuntime() {
       else if (/^[1-9]$/.test(k) && !choicesEl.hidden) { var b = choicesEl.querySelectorAll('[data-ch]')[+k - 1]; if (b && !b.disabled) choose(b.getAttribute('data-ch')); }
     };
     var onKeyUp = function (e) { if (e.key === 'Control' && mode.ctrl) { mode.ctrl = false; setMode('skip', false); } };
-    var onWheel = function (e) { if (e.deltaY < 0 && screen.hidden && st) { e.preventDefault(); rollback(); } };
+    var onWheel = function (e) { if (e.deltaY < 0 && screen.hidden && st && !gameRun) { e.preventDefault(); rollback(); } };
     root.addEventListener('click', onClick);
     root.addEventListener('keydown', onKey);
     root.addEventListener('keyup', onKeyUp);
@@ -1740,6 +2136,7 @@ function NovellaRuntime() {
   RT.CSS = [
     '.nvp{position:relative;width:100%;height:100%;display:grid;place-items:center;outline:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;--u:1px;--acc:#ff4f8b;--acc-ink:#221a2e;font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif}',
     '.nvp *{box-sizing:border-box}',
+    '.nvp h1,.nvp h2,.nvp h3{color:inherit!important;letter-spacing:normal}',
     '.nvp.nvp-font-serif{font-family:Georgia,"Times New Roman",serif}.nvp.nvp-font-sans{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}.nvp.nvp-font-mono{font-family:ui-monospace,"Cascadia Mono",Consolas,"Courier New",monospace}',
     '.nvp-stage{position:relative;overflow:hidden;background:linear-gradient(160deg,#3a2f52,#1a1424);border-radius:calc(var(--u)*14);color:#fff;cursor:pointer}',
     '.nvp-bg,.nvp-bg img,.nvp-cg,.nvp-veil{position:absolute;inset:0;width:100%;height:100%}',
@@ -1865,6 +2262,62 @@ function NovellaRuntime() {
     '.nvp-petals{position:absolute;inset:0;z-index:12;pointer-events:none;overflow:hidden}.nvp-petals i{position:absolute;top:-20px;width:calc(var(--u)*12);height:calc(var(--u)*8);border-radius:60% 0;background:#ff9fbe;animation:nvp-fall 3s linear forwards}',
     '.nvp-petals i:nth-child(3n){background:#ffd24a}.nvp-petals i:nth-child(4n){background:var(--acc)}',
     '@keyframes nvp-fall{to{transform:translate(calc(var(--u)*40),calc(var(--u)*640)) rotate(540deg)}}',
+    /* mini-games */
+    '.nvp-game{position:absolute;z-index:9;inset:0;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding:calc(var(--u)*12);background:rgba(18,12,28,.45);cursor:default;--g1:#ff4f8b;--g2:#3cc6c0;--g3:#fff;--g1i:#221a2e;--g3i:#221a2e}',
+    '.nvp-game[hidden]{display:none}.nvp-game.solo{position:relative;inset:auto;background:none;padding:0}',
+    '.nvp-g-card{width:min(100%,calc(var(--u)*350));max-height:100%;overflow:auto;background:var(--g3);color:var(--g3i);border:calc(var(--u)*3) solid #2a2238;border-radius:calc(var(--u)*20);box-shadow:0 calc(var(--u)*5) 0 #2a2238;padding:calc(var(--u)*14) calc(var(--u)*16);text-align:center;font-size:calc(var(--u)*14);animation:nvp-gpop .3s cubic-bezier(.3,1.5,.5,1)}',
+    '.nvp-landscape .nvp-g-card{width:min(100%,calc(var(--u)*470))}',
+    '.nvp-g-head small{display:inline-block;font-weight:800;font-size:calc(var(--u)*10.5);letter-spacing:.12em;text-transform:uppercase;padding:calc(var(--u)*2) calc(var(--u)*9);border-radius:999px;background:var(--g2);color:var(--g2i)}',
+    '.nvp-g-head h3{margin:calc(var(--u)*6) 0 calc(var(--u)*2);font-family:"Baloo 2","Nunito",system-ui,sans-serif;font-size:calc(var(--u)*22);line-height:1.1}',
+    '.nvp-g-head p{margin:0;opacity:.8;font-size:calc(var(--u)*13)}',
+    '.nvp-g-area{margin:calc(var(--u)*12) 0 calc(var(--u)*8);user-select:none;-webkit-user-select:none;touch-action:manipulation}',
+    '.nvp-g-status{font-size:calc(var(--u)*12.5);opacity:.85;min-height:1.4em}',
+    '.nvp-g-skip{font:inherit;font-size:calc(var(--u)*11.5);background:none;border:0;color:inherit;opacity:.6;text-decoration:underline;cursor:pointer;margin-top:calc(var(--u)*6)}',
+    '.nvp-game button{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}',
+    '.g-btn{display:block;width:100%;margin-top:calc(var(--u)*12);padding:calc(var(--u)*10);border-radius:999px;background:var(--g1);color:var(--g1i);border:calc(var(--u)*2.5) solid #2a2238;box-shadow:0 calc(var(--u)*3) 0 #2a2238;font-weight:800;font-size:calc(var(--u)*16)}',
+    '.g-btn:active{transform:translateY(calc(var(--u)*2));box-shadow:0 calc(var(--u)*1) 0 #2a2238}.g-big{font-size:calc(var(--u)*24);padding:calc(var(--u)*20)}',
+    '.g-track{position:relative;height:calc(var(--u)*36);border-radius:999px;background:color-mix(in srgb,var(--g3i) 12%,transparent);border:calc(var(--u)*2.5) solid color-mix(in srgb,var(--g3i) 40%,transparent);margin:calc(var(--u)*10) 0}',
+    '.g-zone{position:absolute;top:0;bottom:0;background:var(--g2);border-radius:999px}',
+    '.g-mark{position:absolute;top:calc(var(--u)*-8);bottom:calc(var(--u)*-8);width:calc(var(--u)*9);margin-left:calc(var(--u)*-4.5);background:var(--g1);border:calc(var(--u)*2) solid #2a2238;border-radius:calc(var(--u)*5)}',
+    '.g-hit .g-track{box-shadow:0 0 0 calc(var(--u)*4) var(--g2)}.g-miss{animation:nvp-shake .4s}',
+    '.g-ttt{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--u)*6);width:calc(var(--u)*210);margin:0 auto}',
+    '.g-ttt button{aspect-ratio:1;border-radius:calc(var(--u)*12);background:color-mix(in srgb,var(--g3i) 8%,transparent);border:calc(var(--u)*2) solid color-mix(in srgb,var(--g3i) 30%,transparent);font-size:calc(var(--u)*32);font-weight:800;color:var(--g3i);padding:0;line-height:1}',
+    '.g-ttt .g-X{color:var(--g1)}.g-ttt .g-O{color:var(--g2)}',
+    '.g-mem{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(var(--u)*6);width:min(100%,calc(var(--u)*260));margin:0 auto}',
+    '.nvp-landscape .g-mem.g-n16{grid-template-columns:repeat(8,1fr);width:min(100%,calc(var(--u)*430))}.nvp-landscape .g-mem.g-n12{grid-template-columns:repeat(6,1fr);width:min(100%,calc(var(--u)*360))}',
+    '.g-mem button{aspect-ratio:1;border-radius:calc(var(--u)*10);background:var(--g1);border:calc(var(--u)*2) solid #2a2238;padding:0;font-size:calc(var(--u)*24);color:var(--g1);transition:transform .2s,background .2s}',
+    '.g-mem button span{opacity:0;transition:opacity .15s}.g-mem button.up{background:var(--g3);color:var(--g2);transform:scale(1.05)}.g-mem button.up span{opacity:1}',
+    '.g-mem button.done{background:var(--g2);color:var(--g2i);opacity:.6}',
+    '.g-pad{width:100%;height:calc(var(--u)*150);border-radius:calc(var(--u)*18);border:calc(var(--u)*3) solid #2a2238;background:color-mix(in srgb,var(--g3i) 12%,transparent);color:var(--g3i);font-size:calc(var(--u)*22);font-weight:800}',
+    '.nvp-landscape .g-pad{height:calc(var(--u)*110)}',
+    '.g-pad.g-wait{background:var(--g1);color:var(--g1i)}.g-pad.g-go{background:var(--g2);color:var(--g2i);font-size:calc(var(--u)*34)}.g-pad.g-good{background:var(--g2);color:var(--g2i)}.g-pad.g-bad{background:#8b7d9c;color:#fff}',
+    '.g-find-t{font-size:calc(var(--u)*15);margin-bottom:calc(var(--u)*8)}.g-find-t b{font-size:calc(var(--u)*26);color:var(--g1);vertical-align:middle}',
+    '.g-grid{display:grid;gap:calc(var(--u)*3);width:min(100%,calc(var(--u)*290));margin:0 auto}',
+    '.g-grid button{aspect-ratio:1;background:none;border:0;padding:0;font-size:calc(var(--u)*22);line-height:1;color:var(--g3i)}.g-grid .gc0{color:var(--g1)}.g-grid .gc1{color:var(--g2)}',
+    '.nvp-landscape .g-grid{width:min(100%,calc(var(--u)*330))}.nvp-landscape .g-grid button{font-size:calc(var(--u)*18)}',
+    '.g-meter{height:calc(var(--u)*18);border-radius:999px;background:color-mix(in srgb,var(--g3i) 12%,transparent);border:calc(var(--u)*2) solid #2a2238;overflow:hidden}.g-meter i{display:block;height:100%;width:0;background:var(--g2);transition:width .1s}',
+    '.g-simon{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*8);width:calc(var(--u)*190);margin:0 auto}',
+    '.g-simon button{aspect-ratio:1;border-radius:calc(var(--u)*18);border:calc(var(--u)*3) solid #2a2238;opacity:.55;transition:opacity .1s,transform .1s,box-shadow .1s}',
+    '.g-simon .p0{background:var(--g1);border-top-left-radius:50%}.g-simon .p1{background:var(--g2);border-top-right-radius:50%}.g-simon .p2{background:color-mix(in srgb,var(--g1) 45%,#ffd24a);border-bottom-left-radius:50%}.g-simon .p3{background:color-mix(in srgb,var(--g2) 45%,#8a6cff);border-bottom-right-radius:50%}',
+    '.g-simon button.lit{opacity:1;transform:scale(1.05);box-shadow:0 0 calc(var(--u)*18) #fff}',
+    '.g-holes{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--u)*8);width:calc(var(--u)*220);margin:0 auto}',
+    '.nvp-landscape .g-holes{width:calc(var(--u)*190)}',
+    '.g-holes button{aspect-ratio:1;border-radius:50%;background:color-mix(in srgb,var(--g3i) 14%,transparent);border:calc(var(--u)*2) solid color-mix(in srgb,var(--g3i) 35%,transparent);padding:0;display:grid;place-items:center;overflow:hidden}',
+    '.g-holes i{width:72%;height:72%;border-radius:50%;background:var(--g1);border:calc(var(--u)*2.5) solid #2a2238;transform:scale(0) translateY(40%);transition:transform .12s;display:block;background-image:radial-gradient(circle at 35% 40%,#2a2238 0 7%,transparent 8%),radial-gradient(circle at 65% 40%,#2a2238 0 7%,transparent 8%)}',
+    '.g-holes .up i{transform:scale(1)}.g-holes .bonk i{transform:scale(1.1);background-color:var(--g2)}',
+    '.g-code-d{font-family:"Baloo 2","Nunito",system-ui,sans-serif;font-size:calc(var(--u)*44);font-weight:800;line-height:1;color:var(--g1)}.g-code-d.ok{color:var(--g2)}.g-code-d.bad{color:#8b7d9c}',
+    '.g-code form{display:flex;gap:calc(var(--u)*8);margin-top:calc(var(--u)*10)}.g-code input{flex:1;min-width:0;font:inherit;font-size:calc(var(--u)*18);font-weight:800;text-align:center;padding:calc(var(--u)*8);border-radius:calc(var(--u)*12);border:calc(var(--u)*2.5) solid #2a2238;user-select:text}',
+    '.g-code .g-btn{width:auto;margin:0;padding:calc(var(--u)*8) calc(var(--u)*16)}',
+    '.g-hist{display:flex;flex-wrap:wrap;gap:calc(var(--u)*5);justify-content:center;margin-top:calc(var(--u)*10)}.g-hist span{font-size:calc(var(--u)*12);font-weight:700;padding:calc(var(--u)*3) calc(var(--u)*8);border-radius:999px;background:color-mix(in srgb,var(--g3i) 10%,transparent)}',
+    '.g-vs{display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*14);font-size:calc(var(--u)*40);margin-bottom:calc(var(--u)*10)}.g-vs b{font-size:calc(var(--u)*14);opacity:.6}',
+    '.g-rps{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--u)*8)}',
+    '.g-rps button{display:grid;gap:calc(var(--u)*2);justify-items:center;padding:calc(var(--u)*8) 0;border-radius:calc(var(--u)*14);background:var(--g1);color:var(--g1i);border:calc(var(--u)*2.5) solid #2a2238;box-shadow:0 calc(var(--u)*3) 0 #2a2238;font-weight:800;font-size:calc(var(--u)*12)}.g-rps button span{font-size:calc(var(--u)*28);line-height:1.1}',
+    '.nvp-g-res{padding:calc(var(--u)*14) 0 calc(var(--u)*4)}.nvp-g-big{font-family:"Baloo 2","Nunito",system-ui,sans-serif;font-size:calc(var(--u)*30);font-weight:800;line-height:1.1}.nvp-g-res.win .nvp-g-big{color:var(--g2)}.nvp-g-res.lose .nvp-g-big{color:var(--g1)}',
+    '.nvp-g-res p{opacity:.75;margin:calc(var(--u)*4) 0 calc(var(--u)*12)}.nvp-g-btns{display:flex;flex-wrap:wrap;gap:calc(var(--u)*8);justify-content:center}',
+    '.nvp-g-btns button{padding:calc(var(--u)*9) calc(var(--u)*16);border-radius:999px;font-weight:800;font-size:calc(var(--u)*14);background:transparent;color:var(--g3i);border:calc(var(--u)*2.5) solid #2a2238}.nvp-g-btns button.pri{background:var(--g1);color:var(--g1i);box-shadow:0 calc(var(--u)*3) 0 #2a2238}',
+    '@keyframes nvp-shake{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}',
+    '.nvp-solo{height:auto;display:block}',
+    '@keyframes nvp-gpop{from{opacity:0;transform:scale(.9)}}',
     '@media (prefers-reduced-motion:reduce){.nvp *{animation-duration:.01ms!important}}'
   ].join('\n');
   RT.injectCss = function (doc) {
@@ -1910,6 +2363,7 @@ NV.injectCss();
     if (!key) return '';
     if (key.indexOf('demo:') === 0) return '_/theme/demo-' + key.slice(5) + '.svg';
     if (/^i[0-9a-f]+$/.test(key)) return NVT.api() + '/img?k=' + encodeURIComponent(key);
+    if (/^a[0-9a-f]+$/.test(key)) return NVT.api() + '/audio?k=' + encodeURIComponent(key);
     return '';
   };
   NVT.coverHtml = function (c, badge) {
@@ -1921,10 +2375,12 @@ NV.injectCss();
   NVT.uid = function (p) { return (p || 'x') + Math.random().toString(36).slice(2, 8); };
 
   /* ---------------------------------------------------------------- the story checker */
-  NVT.lint = function (data, images) {
+  NVT.isFile = function (key) { return /^a[0-9a-f]+$/.test(key || ''); };
+  NVT.lint = function (data, images, sounds) {
     var out = [], scenes = data.scenes || [], byId = {}, chars = {}, vars = (data.vars || []).map(function (v) { return v.name; });
     var have = {};
     (images || []).forEach(function (i) { have[i.key] = 1; });
+    (sounds || []).forEach(function (i) { have[i.key] = 1; });
     NVT.ART.forEach(function (a) { have[a.key] = 1; });
     scenes.forEach(function (s) { byId[s.id] = s; });
     (data.chars || []).forEach(function (c) { chars[c.id] = c; });
@@ -1949,6 +2405,13 @@ NV.injectCss();
         if (x.t === 'bg' && !x.img) e('warn', 'Step ' + (i + 1) + ': choose a background picture', s, k);
         if ((x.t === 'set' || x.t === 'input') && (!x.var || vars.indexOf(x.var) < 0)) e('error', 'Step ' + (i + 1) + ': choose a variable', s, k);
         if (x.t === 'jump' && !byId[x.to]) e('error', 'Step ' + (i + 1) + ': the jump has no target scene', s, k);
+        if ((x.t === 'music' && NVT.isFile(x.track)) || (x.t === 'sfx' && NVT.isFile(x.name))) { if (!have[x.t === 'music' ? x.track : x.name]) e('error', 'Step ' + (i + 1) + ' plays a sound file that was deleted', s, k); }
+        if (x.t === 'game') {
+          if (!NV.GAMES[x.game]) e('error', 'Step ' + (i + 1) + ': choose a mini-game', s, k);
+          if (x.win && !byId[x.win]) e('error', 'Step ' + (i + 1) + ': "if they win" leads to a scene that was deleted', s, k);
+          if (x.lose && !byId[x.lose]) e('error', 'Step ' + (i + 1) + ': "if they lose" leads to a scene that was deleted', s, k);
+          if (x.var && !(data.vars || []).some(function (v) { return v.name === x.var && v.type === 'flag'; })) e('error', 'Step ' + (i + 1) + ': the game\'s result needs a yes / no variable', s, k);
+        }
       });
       (s.choices || []).forEach(function (c, i) {
         if (!String(c.text || '').trim()) e('error', 'Choice ' + (i + 1) + ' has no text', s);
@@ -1994,7 +2457,13 @@ NV.injectCss();
   NVT.targets = function (s) {
     var out = [];
     (s.choices || []).forEach(function (c) { if (c.to) out.push({ to: c.to, kind: 'choice', label: c.text, cond: !!c.if }); });
-    (s.steps || []).forEach(function (x) { if (x.t === 'jump' && x.to) out.push({ to: x.to, kind: 'jump', label: x.if ? 'if ' + x.if : 'jump', cond: !!x.if }); });
+    (s.steps || []).forEach(function (x) {
+      if (x.t === 'jump' && x.to) out.push({ to: x.to, kind: 'jump', label: x.if ? 'if ' + x.if : 'jump', cond: !!x.if });
+      if (x.t === 'game') {
+        if (x.win) out.push({ to: x.win, kind: 'game', label: 'win ' + ((NV.GAMES[x.game] || [''])[0]), cond: true });
+        if (x.lose) out.push({ to: x.lose, kind: 'game', label: 'lose ' + ((NV.GAMES[x.game] || [''])[0]), cond: true });
+      }
+    });
     if (s.next) out.push({ to: s.next, kind: 'next', label: '' });
     return out;
   };
@@ -2099,7 +2568,14 @@ NV.injectCss();
     var keys = {};
     function k(v) { if (v) keys[v] = 1; }
     k((data.settings || {}).title_img);
-    (data.scenes || []).forEach(function (s) { (s.steps || []).forEach(function (x) { if (x.t === 'bg' || x.t === 'cg') k(x.img); }); });
+    if (NVT.isFile((data.settings || {}).title_music)) k(data.settings.title_music);
+    (data.scenes || []).forEach(function (s) {
+      (s.steps || []).forEach(function (x) {
+        if (x.t === 'bg' || x.t === 'cg') k(x.img);
+        if (x.t === 'music' && NVT.isFile(x.track)) k(x.track);
+        if (x.t === 'sfx' && NVT.isFile(x.name)) k(x.name);
+      });
+    });
     (data.chars || []).forEach(function (c) { (c.poses || []).forEach(function (p) { k(p.img); }); });
     return Object.keys(keys);
   }
@@ -2166,6 +2642,27 @@ NV.injectCss();
     var end = new Uint8Array([].concat([0x50, 0x4b, 5, 6], u16(0), u16(0), u16(files.length), u16(files.length), u32(size), u32(offset), u16(0)));
     return new Blob(parts.concat(central, [end]), { type: 'application/zip' });
   };
+  /* sounds: read a file as a data URL and measure its length (audio isn't re-encoded, so the size limit is checked first) */
+  NVT.readSound = function (file, lim) {
+    if (!/^audio\//.test(file.type || '') && !/\.(mp3|ogg|wav|m4a|webm)$/i.test(file.name)) return Promise.reject(new Error(file.name + ' isn\'t a sound file (MP3, OGG, WAV or M4A).'));
+    if (file.size > lim.sound_kb * 1024) return Promise.reject(new Error(file.name + ' is ' + Math.round(file.size / 1024) + ' KB; the ' + lim.label + ' plan allows ' + lim.sound_kb + ' KB per sound. Try a shorter clip or a lower-quality MP3.'));
+    var secs = new Promise(function (ok) {
+      try {
+        var url = URL.createObjectURL(file), el = new window.Audio();
+        var done = function (v) { URL.revokeObjectURL(url); ok(v); };
+        el.preload = 'metadata';
+        el.onloadedmetadata = function () { done(isFinite(el.duration) ? el.duration : 0); };
+        el.onerror = function () { done(0); };
+        setTimeout(function () { done(0); }, 4000);
+        el.src = url;
+      } catch (e) { ok(0); }
+    });
+    var data = new Promise(function (ok, bad) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = function () { bad(new Error('Could not read ' + file.name)); }; fr.readAsDataURL(file); });
+    return Promise.all([data, secs]).then(function (r) { return { dataUrl: r[0], seconds: Math.round(r[1] * 10) / 10 }; });
+  };
+  NVT.fmtSecs = function (s) { s = Math.round(s || 0); return s ? Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2) : '–'; };
+  NVT.GAME_PALETTES = [['Sakura', '#ff4f8b', '#3cc6c0', '#ffffff'], ['Midnight', '#8fe3df', '#ff6fa3', '#1c1a3a'], ['Forest', '#4c9a73', '#ffd24a', '#f3f7ec'],
+    ['Sunset', '#ff9a3c', '#8a6cff', '#2a2238'], ['Candy', '#8a7ad6', '#ff4f8b', '#fff5f8'], ['Paper', '#3b2a1e', '#e5735e', '#fbf3e3']];
   NVT.download = function (blob, name) {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
@@ -2439,7 +2936,7 @@ NV.injectCss();
 (function () {
   'use strict';
   var esc = UI.esc;
-  var TABS = [['map', 'Map', 'map'], ['write', 'Write', 'edit'], ['cast', 'Cast', 'users'], ['pics', 'Pictures', 'image'], ['vars', 'Variables', 'sliders'], ['settings', 'Settings', 'gear']];
+  var TABS = [['map', 'Map', 'map'], ['write', 'Write', 'edit'], ['cast', 'Cast', 'users'], ['pics', 'Pictures', 'image'], ['sounds', 'Sounds', 'music'], ['vars', 'Variables', 'sliders'], ['settings', 'Settings', 'gear']];
   var POS_LABELS = [['farleft', 'Far left'], ['left', 'Left'], ['center', 'Centre'], ['right', 'Right'], ['farright', 'Far right']];
   var ACCENTS = ['#ff4f8b', '#ff9a3c', '#ffd24a', '#3cc6c0', '#8fe3df', '#8a7ad6', '#5b8def', '#2a2238'];
 
@@ -2492,6 +2989,13 @@ NV.injectCss();
     function valInput(path, def, val) {
       if (def && def.type === 'flag') return '<select data-bind="' + path + '" data-type="bools">' + opt('true', 'true', String(!!val)) + opt('false', 'false', String(!!val)) + '</select>';
       return '<input type="' + (def && def.type === 'number' ? 'number' : 'text') + '" class="num" data-bind="' + path + '" data-type="' + (def && def.type === 'number' ? 'num' : 'str') + '" value="' + esc(val == null ? '' : val) + '">';
+    }
+    function soundOptions(sel, sfx) {
+      var built = sfx ? Object.keys(NV.SFX).map(function (k) { return opt(k, NV.SFX[k], sel); }) : Object.keys(NV.TRACKS).map(function (k) { return opt(k, NV.TRACKS[k].name, sel); });
+      var want = sfx ? 'sound' : 'music';
+      var mine = (S.sounds || []).slice().sort(function (a, b) { return (b.kind === want) - (a.kind === want); }).map(function (x) { return opt(x.key, x.name + ' · ' + NVT.fmtSecs(x.seconds), sel); });
+      var missing = NVT.isFile(sel) && !(S.sounds || []).some(function (x) { return x.key === sel; }) ? opt(sel, 'Missing sound (deleted)', sel) : '';
+      return '<optgroup label="Built-in">' + built.join('') + '</optgroup>' + (mine.length || missing ? '<optgroup label="Your sounds">' + missing + mine.join('') + '</optgroup>' : '');
     }
     function condCheck(c) { return c ? NV.check(c, (D.vars || []).map(function (v) { return v.name; })) : { ok: true }; }
 
@@ -2571,7 +3075,7 @@ NV.injectCss();
     function updateCheck() {
       var el = view.querySelector('[data-checkn]');
       if (!el) return;
-      var items = NVT.lint(D, S.images), errs = items.filter(function (i) { return i.lvl === 'error'; }).length;
+      var items = NVT.lint(D, S.images, S.sounds), errs = items.filter(function (i) { return i.lvl === 'error'; }).length;
       el.innerHTML = items.length ? ' <span class="count' + (errs ? '' : ' warn') + '">' + items.length + '</span>' : '';
     }
     function drawTab() {
@@ -2579,7 +3083,7 @@ NV.injectCss();
       var body = view.querySelector('[data-body]');
       if (!body) return;
       if (selId && sceneIdx(selId) < 0) selId = null;
-      ({ map: drawMap, write: drawWrite, cast: drawCast, pics: drawPics, vars: drawVars, settings: drawSettings })[tab](body);
+      ({ map: drawMap, write: drawWrite, cast: drawCast, pics: drawPics, sounds: drawSounds, vars: drawVars, settings: drawSettings })[tab](body);
       setUrl();
     }
     function goTab(t, sid) { tab = t; if (sid !== undefined) selId = sid; selStep = null; drawTab(); window.scrollTo(0, 0); }
@@ -2592,7 +3096,7 @@ NV.injectCss();
         '<button class="ui-btn" data-a="tidy" title="Arrange scenes in rows">' + UI.icon('grid') + 'Tidy up</button>' +
         '<button class="ui-btn icon" data-a="zoom-out" aria-label="Zoom out">−</button><button class="ui-btn icon" data-a="zoom-in" aria-label="Zoom in">' + UI.icon('plus') + '</button>' +
         '<button class="ui-btn" data-a="fit">Fit</button></div>' +
-        '<div class="mp-legend"><span><i></i>choice</span><span><i class="n"></i>then</span><span><i class="j"></i>jump</span></div></div>' +
+        '<div class="mp-legend"><span><i></i>choice</span><span><i class="n"></i>then</span><span><i class="j"></i>jump</span><span><i class="g"></i>game</span></div></div>' +
         '<aside class="mp-side" data-side></aside></div>';
       if (!cam.fitted) { fitMap(); cam.fitted = true; }
       renderWorld(); drawSide();
@@ -2611,7 +3115,7 @@ NV.injectCss();
     function renderWorld() {
       var w = view.querySelector('[data-world]');
       if (!w) return;
-      var lint = NVT.lint(D, S.images), bad = {};
+      var lint = NVT.lint(D, S.images, S.sounds), bad = {};
       lint.forEach(function (i) { if (i.scene && i.lvl === 'error') bad[i.scene] = 1; });
       var edges = '', nodes = '';
       D.scenes.forEach(function (s) {
@@ -2789,10 +3293,11 @@ NV.injectCss();
       } else if (x.t === 'cg') {
         b = '<div class="st-row">' + picField(p + 'img', 'cg', 'Hide the illustration') + '</div><p class="ui-hint">Illustrations cover the whole stage and unlock in the reader\'s Gallery. Pick "No picture" to hide it again.</p>';
       } else if (x.t === 'music') {
-        b = '<div class="st-row"><select data-bind="' + p + 'track" aria-label="Music">' + opt('', 'Stop the music', x.track || '') + Object.keys(NV.TRACKS).map(function (k) { return opt(k, NV.TRACKS[k].name, x.track); }).join('') + '</select>' +
-          '<button class="ui-btn sm" data-a="try-music" data-path="' + p + 'track">' + UI.icon('play') + 'Listen</button></div>';
+        b = '<div class="st-row"><select data-bind="' + p + 'track" aria-label="Music">' + opt('', 'Stop the music', x.track || '') + soundOptions(x.track, false) + '</select>' +
+          '<button class="ui-btn sm" data-a="try-music" data-path="' + p + 'track">' + UI.icon('play') + 'Listen</button></div>' +
+          ((S.sounds || []).length ? '' : '<p class="ui-hint" style="margin:0">Upload your own music in the Sounds tab.</p>');
       } else if (x.t === 'sfx') {
-        b = '<div class="st-row"><select data-bind="' + p + 'name">' + Object.keys(NV.SFX).map(function (k) { return opt(k, NV.SFX[k], x.name); }).join('') + '</select>' +
+        b = '<div class="st-row"><select data-bind="' + p + 'name">' + soundOptions(x.name, true) + '</select>' +
           '<button class="ui-btn sm" data-a="try-sfx" data-path="' + p + 'name">' + UI.icon('play') + 'Listen</button></div>';
       } else if (x.t === 'fx') {
         b = '<div class="st-row"><select data-bind="' + p + 'name">' + [['shake', 'Screen shake'], ['flash', 'White flash'], ['fade', 'Fade to black and back']].map(function (o) { return opt(o[0], o[1], x.name); }).join('') + '</select></div>';
@@ -2803,6 +3308,25 @@ NV.injectCss();
           '<input type="text" data-bind="' + p + 'dflt" placeholder="Default answer" value="' + esc(x.dflt || '') + '"></div>';
       } else if (x.t === 'card') {
         b = '<div class="st-row"><input type="text" data-bind="' + p + 'title" placeholder="Chapter title" value="' + esc(x.title || '') + '"><input type="text" data-bind="' + p + 'sub" placeholder="Subtitle (optional)" value="' + esc(x.sub || '') + '"></div>';
+      } else if (x.t === 'game') {
+        var gm = NV.GAMES[x.game] || NV.GAMES.timing, flags = (D.vars || []).filter(function (v) { return v.type === 'flag'; });
+        b = '<div class="st-row"><select data-bind="' + p + 'game" data-rr aria-label="Game">' + Object.keys(NV.GAMES).map(function (k) { return opt(k, NV.GAMES[k][0], x.game); }).join('') + '</select>' +
+          '<select data-bind="' + p + 'diff" data-type="num" aria-label="Difficulty">' + [[0, 'Easy'], [1, 'Normal'], [2, 'Hard']].map(function (o) { return opt(o[0], o[1], x.diff || 0); }).join('') + '</select>' +
+          '<button class="ui-btn sm primary" data-a="game-try" data-i="' + i + '">' + UI.icon('play') + 'Try it</button></div>' +
+          '<p class="ui-hint" style="margin:0">' + esc(gm[1]) + '</p>' +
+          '<div class="st-row"><input type="text" data-bind="' + p + 'title" maxlength="80" placeholder="Title: ' + esc(gm[0]) + '" value="' + esc(x.title || '') + '">' +
+          '<input type="text" data-bind="' + p + 'prompt" maxlength="200" placeholder="Instructions (optional)" value="' + esc(x.prompt || '') + '"></div>' +
+          '<div class="st-row">' + [['c1', 'Main'], ['c2', 'Accent'], ['c3', 'Panel']].map(function (c) {
+            return '<label class="gcol"><input type="color" data-bind="' + p + c[0] + '" value="' + esc(x[c[0]] || '#ffffff') + '">' + c[1] + '</label>';
+          }).join('') + NVT.GAME_PALETTES.map(function (pl, k) {
+            return '<button type="button" class="gpal" data-a="game-pal" data-i="' + i + '" data-p="' + k + '" title="' + pl[0] + '" aria-label="' + pl[0] + ' colours"><i style="background:' + pl[1] + '"></i><i style="background:' + pl[2] + '"></i><i style="background:' + pl[3] + '"></i></button>';
+          }).join('') + '</div>' +
+          '<div class="st-row"><span class="small muted">If they win</span><select data-bind="' + p + 'win" data-newscene data-label="' + esc((x.title || gm[0]) + ': won') + '">' + sceneOptions(x.win, true, 'Carry on in this scene') + '</select></div>' +
+          '<div class="st-row"><span class="small muted">If they lose</span><select data-bind="' + p + 'lose" data-newscene data-label="' + esc((x.title || gm[0]) + ': lost') + '">' + sceneOptions(x.lose, true, 'Carry on in this scene') + '</select></div>' +
+          '<div class="st-row"><span class="small muted">Remember it in</span><select data-bind="' + p + 'var" aria-label="Result variable">' + opt('', flags.length ? 'Nothing' : 'Nothing (add a yes / no variable first)', x.var || '') +
+          flags.map(function (v) { return opt(v.name, v.name + ' (true if they win)', x.var); }).join('') + '</select></div>' +
+          '<div class="st-row"><label class="ui-check"><input type="checkbox" data-bind="' + p + 'retry" data-type="bool"' + (x.retry ? ' checked' : '') + '> Offer "Try again" after a loss</label>' +
+          '<label class="ui-check"><input type="checkbox" data-bind="' + p + 'skip" data-type="bool"' + (x.skip !== false ? ' checked' : '') + '> Let readers skip it (counts as a loss)</label></div>';
       } else if (x.t === 'note') {
         b = '<div class="st-note"><textarea data-bind="' + p + 'text" rows="2" placeholder="A note to yourself. Readers never see it.">' + esc(x.text || '') + '</textarea></div>';
       }
@@ -2942,6 +3466,46 @@ NV.injectCss();
       }, Promise.resolve()).then(function () { if (done) UI.toast(UI.plural(done, 'picture') + ' uploaded', 'ok'); if (tab === 'pics') drawTab(); });
     }
 
+    /* ------------------------------------------------------------ SOUNDS */
+    function usesOfSound(key) {
+      var n = D.settings.title_music === key ? 1 : 0;
+      D.scenes.forEach(function (sc) { (sc.steps || []).forEach(function (x) { if ((x.t === 'music' && x.track === key) || (x.t === 'sfx' && x.name === key)) n++; }); });
+      return n;
+    }
+    function kbText(kb) { return kb >= 1024 ? (Math.round(kb / 102.4) / 10) + ' MB' : kb + ' KB'; }
+    function drawSounds(body) {
+      var L = S.limits, list = S.sounds || [], n = list.length;
+      body.innerHTML = '<div class="plan-bar"><div><h2 style="margin:0">Sounds</h2><p class="muted" style="margin:4px 0 0">Your own music and sound effects. ' + esc(L.label) + ' plan: up to <b>' + kbText(L.sound_kb) + '</b> per file (MP3, OGG, WAV or M4A; MP3 keeps files small).</p></div>' +
+        '<div class="ui-row"><div class="meter"><i style="width:' + Math.min(100, n / L.sounds * 100) + '%"></i></div><span class="small"><b>' + n + '</b> of ' + L.sounds + '</span>' +
+        (L.plan === 'pro' ? '<span class="ui-badge brand">Pro</span>' : '<a class="ui-btn sm" href="#pro" data-go="pro">' + UI.icon('star') + 'Go Pro</a>') + '</div></div>' +
+        '<label class="nv-drop" data-drop="snd">' + UI.icon('music') + '<div><b>Drop sound files here</b> or tap to choose</div><div class="small">Upload as <select data-sndkind style="width:auto;min-height:32px;padding:3px 8px;display:inline-block" onclick="event.stopPropagation()">' +
+        opt('music', 'Music (loops)', 'music') + opt('sound', 'Sound effect (plays once)', 'music') + '</select></div><input type="file" accept="audio/*,.mp3,.ogg,.wav,.m4a" multiple data-sndfiles></label>' +
+        '<div data-sndmsg class="small muted" style="margin:8px 0"></div>' +
+        (n ? '<div class="snds">' + list.map(function (x) {
+          var u = usesOfSound(x.key);
+          return '<div class="ui-card snd" data-snd="' + esc(x.id) + '"><button class="ui-btn icon" data-a="snd-play" data-key="' + esc(x.key) + '" aria-label="Play">' + UI.icon(NV.audio.current() === x.key ? 'x' : 'play') + '</button>' +
+            '<input type="text" data-sndname value="' + esc(x.name) + '" maxlength="60" aria-label="Name"><select data-sndkind2 aria-label="Kind">' + opt('music', 'Music (loops)', x.kind) + opt('sound', 'Sound effect', x.kind) + '</select>' +
+            '<div class="meta"><span>' + NVT.fmtSecs(x.seconds) + ' · ' + kbText(Math.round(x.bytes / 1024)) + ' · ' + (u ? 'used ' + u + '×' : 'unused') + '</span>' +
+            '<button class="ui-btn ghost icon sm" data-a="snd-del" data-id="' + esc(x.id) + '" aria-label="Delete">' + UI.icon('trash') + '</button></div></div>';
+        }).join('') + '</div>' : '<div class="ui-empty" style="margin-top:12px">' + UI.icon('music') + '<h3>No sounds uploaded yet</h3><p>The built-in moods and effects below work without any files. Upload your own to give your novel its own voice.</p></div>') +
+        '<div class="set-grid" style="margin-top:22px"><div class="ui-card ui-stack"><h3>Built-in music moods</h3><p class="muted small">Made in the browser, so they cost no space. Tap to listen, tap again to stop.</p><div class="builtin">' +
+        Object.keys(NV.TRACKS).map(function (k) { return '<button class="ui-btn" data-a="builtin-play" data-k="' + k + '">' + UI.icon('music') + esc(NV.TRACKS[k].name) + '</button>'; }).join('') + '</div></div>' +
+        '<div class="ui-card ui-stack"><h3>Built-in sound effects</h3><p class="muted small">Short effects for knocks, chimes, heartbeats and more.</p><div class="builtin">' +
+        Object.keys(NV.SFX).map(function (k) { return '<button class="ui-btn" data-a="builtin-play" data-sfx data-k="' + k + '">' + UI.icon('bell') + esc(NV.SFX[k]) + '</button>'; }).join('') + '</div></div></div>' +
+        '<p class="small muted" style="margin-top:14px">Only upload music and sounds you made or have the rights to use (for example, with a licence that allows use in games you sell).</p>';
+    }
+    function uploadSounds(files) {
+      var kind = (view.querySelector('[data-sndkind]') || {}).value || 'music', msg = view.querySelector('[data-sndmsg]'), list = Array.prototype.slice.call(files), done = 0;
+      return list.reduce(function (pr, f) {
+        return pr.then(function () {
+          if (msg) msg.textContent = 'Uploading ' + (done + 1) + ' of ' + list.length + ': ' + f.name + '…';
+          return NVT.readSound(f, S.limits).then(function (r) {
+            return UI.apiQuiet('upload_sound', id, r.dataUrl, f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').slice(0, 60), kind, r.seconds);
+          }).then(function (res) { S.sounds.unshift(res.sound); done++; }, function (err) { UI.toast(err.message, 'error'); });
+        });
+      }, Promise.resolve()).then(function () { if (done) UI.toast(UI.plural(done, 'sound') + ' uploaded', 'ok'); if (msg) msg.textContent = ''; if (tab === 'sounds') drawTab(); updateCheck(); });
+    }
+
     /* ------------------------------------------------------------ VARIABLES */
     function drawVars(body) {
       body.innerHTML = '<div class="ui-page-head"><div><h2 style="margin:0">Variables</h2><p class="muted">Remember what the reader did: points, flags and names. Choices and steps change them; conditions read them.</p></div>' +
@@ -2990,7 +3554,7 @@ NV.injectCss();
         '<label class="ui-field"><span>Text speed: <b data-cpsv>' + set.cps + '</b> letters/s</span><input type="range" min="10" max="120" step="5" data-set="cps" value="' + set.cps + '" style="width:100%;accent-color:var(--c-brand)"></label></div>' +
         '<div class="ui-grid two"><div class="ui-field"><span>Title screen picture</span><button type="button" class="pic-field" data-a="pick" data-path="settings.title_img" data-kind="cover">' +
         (set.title_img ? '<img alt="" src="' + esc(NVT.img(set.title_img)) + '">' : '<span class="ph"></span>') + '<span>' + esc(set.title_img ? imgName(set.title_img) : 'First background') + '</span></button></div>' +
-        '<label class="ui-field"><span>Title screen music</span><select data-set="title_music">' + opt('', 'None', set.title_music || '') + Object.keys(NV.TRACKS).map(function (k) { return opt(k, NV.TRACKS[k].name, set.title_music); }).join('') + '</select></label></div>' +
+        '<label class="ui-field"><span>Title screen music</span><select data-set="title_music">' + opt('', 'None', set.title_music || '') + soundOptions(set.title_music, false) + '</select></label></div>' +
         '<div class="ed-pv" data-setpv style="max-width:240px;border:2.5px solid var(--c-outline);background:#1a1424"></div></div>' +
         '<div class="ui-card ui-stack"><h3>Story</h3><label class="ui-field"><span>Starting scene</span><select data-set-root="start">' + sceneOptions(D.start) + '</select></label>' +
         '<label class="ui-field"><span>Credits <em>(the Credits screen; one line each)</em></span><textarea data-bind="settings.credits" rows="4" maxlength="1500">' + esc(set.credits || '') + '</textarea></label></div>' +
@@ -3049,7 +3613,7 @@ NV.injectCss();
           setPath(path, v); change(); drawTab();
           return;
         }
-        setPath(path, v === '' && /\.(next|to|who|timeout)$/.test(path) ? null : v);
+        setPath(path, v === '' && /\.(next|to|who|timeout|win|lose)$/.test(path) ? null : v);
         // keep a set step sensible when its variable changes kind
         var m = /^(scenes\.\d+\.steps\.\d+|scenes\.\d+\.choices\.\d+\.set\.\d+)\.var$/.exec(path);
         if (m) { var obj = getPath(m[1]), d = varDef(obj.var); if (d) { obj.op = d.type === 'number' ? '+' : '='; obj.val = d.type === 'number' ? 1 : d.type === 'flag' ? true : ''; } }
@@ -3080,6 +3644,15 @@ NV.injectCss();
         change(); drawTab(); return;
       }
       if (el.hasAttribute('data-files') && el.files.length) { uploadFiles(el.files); el.value = ''; return; }
+      if (el.hasAttribute('data-sndfiles') && el.files.length) { uploadSounds(el.files); el.value = ''; return; }
+      var sc_ = el.closest('[data-snd]');
+      if (sc_ && (el.hasAttribute('data-sndname') || el.hasAttribute('data-sndkind2'))) {
+        var sid_ = sc_.getAttribute('data-snd');
+        UI.apiQuiet('update_sound', sid_, sc_.querySelector('[data-sndname]').value, sc_.querySelector('[data-sndkind2]').value).then(function (r) {
+          S.sounds = S.sounds.map(function (x) { return x.id === sid_ ? r.sound : x; }); UI.toast('Saved', 'ok');
+        });
+        return;
+      }
       var card = el.closest('[data-img]');
       if (card && (el.hasAttribute('data-imgname') || el.hasAttribute('data-imgkind'))) {
         var imgId = card.getAttribute('data-img');
@@ -3121,7 +3694,12 @@ NV.injectCss();
     document.addEventListener('keydown', onKey);
     view.addEventListener('dragover', function (e) { var d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.add('over'); } });
     view.addEventListener('dragleave', function (e) { var d = e.target.closest('[data-drop]'); if (d) d.classList.remove('over'); });
-    view.addEventListener('drop', function (e) { var d = e.target.closest('[data-drop]'); if (d) { e.preventDefault(); d.classList.remove('over'); uploadFiles(e.dataTransfer.files); } });
+    view.addEventListener('drop', function (e) {
+      var d = e.target.closest('[data-drop]');
+      if (!d) return;
+      e.preventDefault(); d.classList.remove('over');
+      if (d.getAttribute('data-drop') === 'snd') uploadSounds(e.dataTransfer.files); else uploadFiles(e.dataTransfer.files);
+    });
 
     function addStep(t) {
       var s = scene(selId);
@@ -3163,7 +3741,7 @@ NV.injectCss();
       switch (act) {
         case 'undo': doUndo(false); break;
         case 'check': {
-          var items = NVT.lint(D, S.images);
+          var items = NVT.lint(D, S.images, S.sounds);
           var m = UI.modal('<h2>' + UI.icon('shield') + ' Story check</h2><p class="muted">Things that could confuse or strand a reader. Tap one to go there.</p>' + ED.lintHtml(items), { wide: true });
           m.el.addEventListener('click', function (ev) {
             var b = ev.target.closest('[data-lint]');
@@ -3173,10 +3751,10 @@ NV.injectCss();
         }
         case 'play': ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name }, null); break;
         case 'play-from': ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name }, sid || selId); break;
-        case 'export': ED.exportGame({ story: S.story, data: D, images: S.images, limits: S.limits, me: ctx.me }); break;
+        case 'export': ED.exportGame({ story: S.story, data: D, images: S.images, sounds: S.sounds, limits: S.limits, me: ctx.me }); break;
         case 'publish':
           save().then(function () {
-            ED.publish({ story: S.story, data: D, images: S.images, onDone: function (st) { S.story = st; S.story.changes = false; drawStatus(); if (tab === 'settings') drawTab(); },
+            ED.publish({ story: S.story, data: D, images: S.images, sounds: S.sounds, onDone: function (st) { S.story = st; S.story.changes = false; drawStatus(); if (tab === 'settings') drawTab(); },
               onLint: function (it) { if (it.scene) goTab('write', it.scene); } });
           });
           break;
@@ -3247,8 +3825,28 @@ NV.injectCss();
         case 'cho-up': if (i > 0) { s.choices.splice(i - 1, 0, s.choices.splice(i, 1)[0]); change(); drawScene(); } break;
         case 'eff-add': { var v0 = (D.vars || [])[0]; if (!v0) { UI.toast('Add a variable in the Variables tab first.', 'error'); break; } openCho[s.choices[i].id] = true; s.choices[i].set.push({ var: v0.name, op: v0.type === 'number' ? '+' : '=', val: v0.type === 'number' ? 1 : v0.type === 'flag' ? true : '' }); change(); drawScene(); break; }
         case 'eff-del': s.choices[i].set.splice(j, 1); change(); drawScene(); break;
-        case 'try-music': { var tr = getPath(a.getAttribute('data-path')); if (NV.audio.current() === tr) { NV.audio.music(''); a.innerHTML = UI.icon('play') + 'Listen'; } else { NV.audio.music(tr); a.innerHTML = UI.icon('x') + 'Stop'; } break; }
-        case 'try-sfx': NV.audio.sfx(getPath(a.getAttribute('data-path'))); break;
+        case 'try-music': { var tr = getPath(a.getAttribute('data-path')); if (NV.audio.current() === tr) { NV.audio.music(''); a.innerHTML = UI.icon('play') + 'Listen'; } else { NV.audio.music(tr, NVT.img(tr)); a.innerHTML = UI.icon('x') + 'Stop'; } break; }
+        case 'try-sfx': { var sn = getPath(a.getAttribute('data-path')); NV.audio.sfx(sn, NVT.img(sn)); break; }
+        case 'game-try': ED.tryGame(s.steps[i], D.settings.accent); break;
+        case 'game-pal': { var pl = NVT.GAME_PALETTES[+a.getAttribute('data-p')], gs = s.steps[i]; gs.c1 = pl[1]; gs.c2 = pl[2]; gs.c3 = pl[3]; selStep = i; change(); drawScene(); break; }
+        case 'snd-play': {
+          var key = a.getAttribute('data-key'), snd = (S.sounds || []).filter(function (x) { return x.key === key; })[0];
+          if (snd && snd.kind === 'sound') { NV.audio.sfx(key, NVT.img(key)); break; }
+          if (NV.audio.current() === key) { NV.audio.music(''); a.innerHTML = UI.icon('play'); } else { NV.audio.music(key, NVT.img(key)); Array.prototype.forEach.call(view.querySelectorAll('[data-a="snd-play"]'), function (o) { o.innerHTML = UI.icon('play'); }); a.innerHTML = UI.icon('x'); }
+          break;
+        }
+        case 'builtin-play': {
+          var bk = a.getAttribute('data-k');
+          if (a.hasAttribute('data-sfx')) NV.audio.sfx(bk); else if (NV.audio.current() === bk) NV.audio.music(''); else NV.audio.music(bk);
+          break;
+        }
+        case 'snd-del': {
+          var sd = (S.sounds || []).filter(function (x) { return x.id === a.getAttribute('data-id'); })[0], su = usesOfSound(sd.key);
+          UI.confirm({ title: 'Delete "' + sd.name + '"?', text: su ? 'It\'s used ' + su + ' times; those steps will play nothing until you pick another.' : 'It isn\'t used anywhere.', ok: 'Delete', danger: true }).then(function (y) {
+            if (y) UI.api('delete_sound', sd.id).then(function () { if (NV.audio.current() === sd.key) NV.audio.music(''); S.sounds = S.sounds.filter(function (x) { return x.id !== sd.id; }); drawTab(); updateCheck(); });
+          });
+          break;
+        }
         case 'pick': pick(a.getAttribute('data-path'), a.getAttribute('data-kind')); break;
         case 'pick-cover':
           ED.pickImage({ kind: 'cover', images: S.images, allowNone: true, upload: upload, title: 'Choose a cover' }).then(function (key) {
@@ -3338,7 +3936,7 @@ NV.injectCss();
     });
 
     var ready = UI.api('get_story', id).then(function (r) {
-      S = r; D = r.data;
+      S = r; D = r.data; S.sounds = S.sounds || [];
       D.chars = D.chars || []; D.vars = D.vars || []; D.scenes = D.scenes || []; D.settings = D.settings || {};
       lastJson = JSON.stringify(D);
       document.title = S.story.title + ' · ' + UI.config.name;
@@ -3358,7 +3956,7 @@ NV.injectCss();
 
 /* ===== guide.html ===== */
 (function () {
-  var SECTIONS = [['basics', 'The basics', 'book'], ['writing', 'Writing scenes', 'edit'], ['branch', 'Choices & branches', 'jump'], ['vars', 'Variables & conditions', 'sliders'],
+  var SECTIONS = [['basics', 'The basics', 'book'], ['writing', 'Writing scenes', 'edit'], ['branch', 'Choices & branches', 'jump'], ['games', 'Mini-games', 'game'], ['sound', 'Music & sounds', 'music'], ['vars', 'Variables & conditions', 'sliders'],
                   ['text', 'Text styling', 'chat'], ['readers', 'What readers get', 'play'], ['renpy', 'Coming from Ren\'Py', 'refresh'], ['sell', 'Sharing & selling', 'download']];
   function row(a, b, c) { return '<tr><td>' + a + '</td><td>' + b + '</td>' + (c != null ? '<td>' + c + '</td>' : '') + '</tr>'; }
   function card(icon, title, text) { return '<div class="ui-card"><h3>' + UI.icon(icon) + title + '</h3><p class="muted" style="margin:0">' + text + '</p></div>'; }
@@ -3377,7 +3975,8 @@ NV.injectCss();
       row('<b>Change variable</b>', 'Adds, subtracts, sets or flips a variable.') +
       row('<b>Jump to scene</b>', 'Goes to another scene right away, usually with a condition: "if trust < 2, jump to The Fight".') +
       row('<b>Illustration (CG)</b>', 'Covers the stage with a full picture; readers unlock it in their Gallery.') +
-      row('<b>Music & sound</b>', 'Eight built-in music moods and ten sound effects, generated in the browser. No files to upload.') +
+      row('<b>Music & sound</b>', 'Eight built-in music moods and ten sound effects, or your own uploaded music and sounds.') +
+      row('<b>Mini-game</b>', 'A short challenge in the middle of the story (10 games). Winning or losing can lead to different scenes.') +
       row('<b>Effect, pause, chapter card</b>', 'Screen shake, flash, fade to black; a timed pause; a big chapter title.') +
       row('<b>Ask the reader</b>', 'Shows a text box ("What\'s your name?") and saves the answer in a text variable.') +
       row('<b>Writer\'s note</b>', 'A note for you. Readers never see it.') + '</tbody></table></div></section>' +
@@ -3388,6 +3987,19 @@ NV.injectCss();
       card('clock', 'Timed choices', 'Give a scene a timer. If the reader hesitates, the choice you picked is made for them.') +
       card('edit', 'Small differences', 'You don\'t need a whole new scene for a small change: give any line a condition, or use <code>{if …}…{else}…{/if}</code> inside a line.') +
       card('shield', 'Story check', 'The Check button finds choices that lead nowhere, scenes nobody can reach, dead ends and typos in conditions.') + '</div></section>' +
+      '<section id="g-games"><h2>' + UI.icon('game') + 'Mini-games</h2><p class="muted">Add a <b>Mini-game</b> step anywhere in a scene. Pick a game, a difficulty and three colours (main, accent and panel) so it matches your novel, then choose what happens next.</p>' +
+      '<div class="tw"><table><thead><tr><th>Game</th><th>What the reader does</th></tr></thead><tbody>' +
+      Object.keys(NV.GAMES).map(function (k) { return row('<b>' + UI.esc(NV.GAMES[k][0]) + '</b>', UI.esc(NV.GAMES[k][1])); }).join('') + '</tbody></table></div>' +
+      '<div class="cards" style="margin-top:14px">' +
+      card('jump', 'Win or lose paths', '"If they win" and "If they lose" can each carry on in the scene or lead to another scene. The map draws them as dashed mint arrows.') +
+      card('sliders', 'Remember the result', 'Store the result in a yes / no variable (true if they won), then react later: <code>{if won_duel}You beat me!{else}Better luck next time.{/if}</code>') +
+      card('refresh', 'Retry & skip', 'Offer "Try again" after a loss, and let readers skip a game (it counts as a loss) so nobody gets stuck.') +
+      card('star', 'Difficulty', 'Easy, Normal or Hard changes speed, time limits and how clever the computer plays.') + '</div></section>' +
+      '<section id="g-sound"><h2>' + UI.icon('music') + 'Music &amp; sounds</h2><div class="cards">' +
+      card('music', 'Built-in moods', 'Calm, Romance, Upbeat, Mystery, Tension, Sad, Dreamy and Rain, made in the browser: they cost no space.') +
+      card('upload', 'Your own files', 'Upload MP3, OGG, WAV or M4A in the Sounds tab, as music (loops) or sound effects (play once). Free: up to 1 MB per file, 10 per novel. Pro: 4 MB, 60.') +
+      card('download', 'In exported games', 'Your music and sounds are packed into the HTML game, so it plays offline too.') +
+      card('shield', 'Rights', 'Only upload audio you made or have a licence for, especially in novels you sell.') + '</div></section>' +
       '<section id="g-vars"><h2>' + UI.icon('sliders') + 'Variables &amp; conditions</h2><div class="tw"><table><thead><tr><th>Write</th><th>Means</th></tr></thead><tbody>' +
       row('<code>trust >= 3</code>', 'trust is 3 or more (also <code>&gt;</code> <code>&lt;</code> <code>&lt;=</code> <code>==</code> <code>!=</code>)') +
       row('<code>has_key</code> / <code>not has_key</code>', 'a yes/no flag is on / off') +
@@ -3426,7 +4038,8 @@ NV.injectCss();
       row('<code>if / elif / else</code> blocks', 'Conditions on any step', 'and <code>{if}</code> inside a line') +
       row('<code>renpy.input()</code>', 'Ask the reader', 'Saves into a text variable') +
       row('<code>persistent.*</code>', '<code>ended("…")</code>, Gallery, Story map', 'Kept on the reader\'s device') +
-      row('<code>play music</code> / <code>play sound</code>', 'Music & Sound steps', 'Built-in moods, no files') +
+      row('<code>play music</code> / <code>play sound</code>', 'Music & Sound steps', 'Built-in moods, or your uploaded files') +
+      row('Mini-games in Python / screens', 'Mini-game step', '10 ready-made games, themed with 3 colours, win / lose paths') +
       row('<code>{b} {i} {color} {w} [var]</code>', '<code>** * {color} {w} [var]</code>', '') +
       row('Build distributions', 'Package & sell', 'One HTML file or an itch.io zip; runs in any browser') + '</tbody></table></div></section>' +
       '<section id="g-sell"><h2>' + UI.icon('download') + 'Sharing &amp; selling</h2><div class="cards">' +
@@ -3460,11 +4073,13 @@ NV.injectCss();
                ['sliders', 'Choices that remember', 'Points, flags and names. Lock a choice until the reader earns it, or tweak a single line when they took another path.'],
                ['flag', 'Multiple endings', 'True, good, bad and secret endings that readers collect, with a story map to replay from any scene.'],
                ['clock', 'Timed choices', 'Make readers decide under pressure. If they hesitate, the story decides for them.'],
-               ['music', 'Music without files', 'Eight built-in moods and sound effects, played right in the browser.'],
+               ['game', '10 mini-games', 'Drop a challenge into any scene: timing, tic-tac-toe, memory, reaction and more. Win and lose can lead to different scenes.'],
+               ['music', 'Music & sound', 'Eight built-in moods and ten effects, or upload your own music and sounds.'],
                ['shield', 'A story checker', 'One click finds choices that lead nowhere, unreachable scenes and typos in conditions.'],
                ['play', 'Playtest with x-ray vision', 'Play from any scene and watch (or change) every variable live.'],
                ['download', 'Package & sell', 'One HTML file with saves, rollback, gallery and endings built in. Ready for itch.io.'],
-               ['image', 'Starter art included', 'Backgrounds, a cast with six expressions each, illustrations and covers, free for any novel.']],
+               ['image', 'Starter art included', 'Backgrounds, a cast with six expressions each, illustrations and covers, free for any novel.'],
+               ['refresh', 'Readers in control', 'Rollback, history, auto, skip, six save slots and adjustable text speed and size.']],
     faq: [['Do I need to know how to code?', 'No. Everything Ren\'Py does with scripts (characters, menus, jumps, variables, conditions), ImgNovella does with forms and a map.'],
           ['Is it free?', 'Yes. The Free plan includes every editor feature, publishing and exporting. Pictures are kept to 400 × 600 px and you can have 5 novels. Pro allows 1200 × 1800 pictures, 100 novels and removes the ImgNovella credit from exported games.'],
           ['Can I sell what I make?', 'Yes. "Package & sell" downloads your novel as a standalone HTML game (or an itch.io-ready zip). Sell it wherever you like; we take no cut. Only use art you have the rights to: the built-in starter art is free to use.'],
@@ -3511,7 +4126,7 @@ NV.injectCss();
         '<div style="text-align:center;margin-top:20px"><a class="ui-btn" href="#discover" data-go="discover">' + UI.icon('search') + 'Browse every novel</a></div></div></section>' +
       '<section class="lp-section"><div class="ui-wrap"><div class="lp-two">' +
         '<div class="ui-card"><span class="ui-badge brand">For creators</span><h2 style="margin-top:10px">Write the story you want to read</h2><ul>' +
-        ['A finished starter novel to remix', 'Conditions, variables and timed choices', 'Playtest from any scene', 'Publish, share a link, or sell the game'].map(function (x) { return '<li>' + UI.icon('check') + x + '</li>'; }).join('') +
+        ['A finished starter novel to remix', 'Conditions, variables and timed choices', '10 mini-games and your own music', 'Playtest from any scene', 'Publish, share a link, or sell the game'].map(function (x) { return '<li>' + UI.icon('check') + x + '</li>'; }).join('') +
         '</ul><a class="ui-btn primary" href="#' + (me ? 'studio' : 'auth/signup') + '" data-go="' + (me ? 'studio' : 'auth/signup') + '">' + UI.icon('edit') + 'Start creating</a></div>' +
         '<div class="ui-card"><span class="ui-badge mint">For readers</span><h2 style="margin-top:10px">Stories that change when you do</h2><ul>' +
         ['Free novels, playable on any device', 'Save anywhere, roll back any line', 'Collect every ending', 'A story map to replay any path'].map(function (x) { return '<li>' + UI.icon('check') + x + '</li>'; }).join('') +
@@ -3614,11 +4229,11 @@ NV.injectCss();
     view.innerHTML = '<div class="ui-wrap"><div class="pr-hero"><div class="eyebrow">Plans</div><h1>Bigger pictures, more novels, your name only</h1>' +
       '<p class="muted" style="font-size:1.1rem">Free has everything you need to write, publish and sell a complete visual novel. Pro is for creators who want crisp art and a clean, unbranded game.</p></div>' +
       '<div class="pr-grid"><div class="ui-card pr-card"><span class="ui-badge" style="justify-self:start">Free</span><h2>Free</h2><div class="big">$0</div><ul>' +
-      li('Pictures up to <b>400 × 600</b> px (either way round), shrunk for you') + li('<b>5</b> novels, <b>40</b> pictures each') + li('Every editor feature: map, conditions, variables, timed choices, music') +
+      li('Pictures up to <b>400 × 600</b> px (either way round), shrunk for you') + li('<b>5</b> novels, <b>40</b> pictures each') + li('Your own music and sounds: <b>10</b> files per novel, up to <b>1 MB</b> each') + li('Every editor feature: map, conditions, variables, timed choices, 10 mini-games, music') +
       li('Publish publicly or by link') + li('Export standalone HTML games and sell them anywhere') + li('A small "Made with ImgNovella" credit on the title screen') + '</ul>' +
       (me ? (isPro ? '' : '<span class="ui-badge good" style="justify-self:start">Your plan</span>') : '<a class="ui-btn" href="#auth/signup" data-go="auth/signup">Start free</a>') + '</div>' +
       '<div class="ui-card pr-card pro"><span class="ui-badge brand" style="justify-self:start">' + UI.icon('star') + 'Pro</span><h2>Pro</h2><div class="big">For serious creators</div><ul>' +
-      li('Pictures up to <b>1200 × 1800</b> px: sharp on big screens') + li('<b>100</b> novels, <b>300</b> pictures each') + li('Remove the ImgNovella credit from exported games') +
+      li('Pictures up to <b>1200 × 1800</b> px: sharp on big screens') + li('<b>100</b> novels, <b>300</b> pictures each') + li('<b>60</b> sound files per novel, up to <b>4 MB</b> each') + li('Remove the ImgNovella credit from exported games') +
       li('Everything in Free') + '</ul>' +
       (isPro ? '<span class="ui-badge good" style="justify-self:start">' + UI.icon('check') + 'You\'re Pro. Thank you!</span>'
         : me ? '<form class="ui-stack" data-req><label class="ui-field"><span>Tell us about your project <em>(optional)</em></span><textarea name="msg" rows="3" placeholder="What are you making? Where will you sell it?"></textarea></label>' +

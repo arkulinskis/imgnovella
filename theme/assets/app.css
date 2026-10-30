@@ -445,6 +445,20 @@ html.ui-dark .ui-badge.mint { color: var(--c-accent); }
 .mp-e.next path { stroke-dasharray: 7 6; }
 .mp-e.jump path { stroke: var(--c-brand-text); stroke-dasharray: 2 5; stroke-linecap: round; stroke-width: 3; }
 .mp-e.cond path { opacity: .45; }
+.mp-e.game path { stroke: var(--c-accent); stroke-width: 3; opacity: .9; stroke-dasharray: 10 4 2 4; }
+.mp-legend i.g { border-top: 3px dashed var(--c-accent); }
+.gcol { display: inline-flex; gap: 6px; align-items: center; font-size: .82rem; font-weight: 800; color: var(--c-muted); }
+.gcol input[type=color] { width: 38px; height: 32px; padding: 1px; border-radius: 9px; border: 2px solid var(--c-outline); background: var(--c-surface); cursor: pointer; }
+.gpal { display: inline-flex; border: 2px solid var(--c-outline); border-radius: 99px; overflow: hidden; padding: 0; cursor: pointer; background: none; }
+.gpal i { width: 13px; height: 24px; display: block; }
+.st-game .st-row > span.small { flex: none; min-width: 90px; }
+.snds { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.snd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; padding: 12px 14px; }
+.snd .ui-btn.icon { width: 46px; min-height: 46px; grid-row: span 2; }
+.snd input, .snd select { min-height: 34px !important; padding: 4px 8px !important; font-size: .85rem !important; }
+.snd .meta { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: .82rem; color: var(--c-muted); }
+.builtin { display: flex; flex-wrap: wrap; gap: 8px; }
+.builtin .ui-btn { min-height: 36px; padding: 6px 12px; font-size: .85rem; }
 .mp-e rect { fill: var(--c-surface); stroke: var(--c-line); stroke-width: 1.5; }
 .mp-e text { font: 700 11.5px var(--font-body); fill: var(--c-muted); }
 .mp-side { display: grid; align-content: start; gap: 14px; }
@@ -494,7 +508,7 @@ html.touch .st-m { opacity: 1; }
 .st-m button { width: 28px; height: 30px; border: 0; border-radius: 8px; background: none; color: var(--c-faint); cursor: pointer; display: grid; place-items: center; }
 .st-m button:hover { background: var(--c-surface-2); color: var(--c-ink); }
 .st-m .ui-ic { width: 16px; height: 16px; }
-.st-if { display: flex; gap: 8px; align-items: center; font-size: .85rem; font-weight: 800; color: var(--c-warn); }
+.st-if { display: flex; gap: 8px; align-items: center; white-space: nowrap; font-size: .85rem; font-weight: 800; color: var(--c-warn); }
 .st-if input { min-height: 34px !important; padding: 5px 10px !important; font-family: ui-monospace, Consolas, monospace !important; font-size: .88rem !important; }
 .st-note textarea { background: var(--c-warn-soft) !important; }
 .cond-bad { border-color: var(--c-bad) !important; }

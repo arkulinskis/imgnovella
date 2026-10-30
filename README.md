@@ -14,7 +14,7 @@ Built on [Anvil](https://anvil.works).
 - **Discover** (`#discover`): published novels with covers, genre chips, search, sort (popular / newest / most liked), a Featured shelf.
 - **Play** (`#play/<slug>`): the player with a title screen (Start, Continue, Load, Endings, Gallery, Story map, Settings, Credits),
   typewriter text with **bold**, *italic*, colour, big/small/shaking text and pauses, characters with expressions and positions,
-  transitions, CG illustrations, built-in music moods and sound effects, timed choices, locked choices with hints,
+  transitions, CG illustrations, built-in music moods and sound effects or the creator's own audio, **10 mini-games**, timed choices, locked choices with hints,
   rollback (Back / Backspace / scroll up), History, Auto and Skip (read text only, or hold Ctrl), 6 save slots + autosave,
   endings collection, a Gallery of unlocked CGs, a Story map to replay from any scene found, text speed / size / volume settings,
   full screen and keyboard shortcuts. Saves and progress live in the reader's browser.
@@ -27,11 +27,17 @@ Built on [Anvil](https://anvil.works).
   - **Map:** the story graph: drag scenes, pan/zoom, Tidy up (auto-layout), choice / then / jump arrows with labels, START badge,
     ending colours, error dots; side panel to write, playtest from here, add a choice to a new scene, set as start, duplicate, delete.
   - **Write:** scene list, the scene's steps (Line, Background, Show/Hide character, Change variable, Jump, CG, Music, Sound, Effect,
-    Pause, Ask the reader, Chapter card, Writer's note), an "only if" condition on any step, choices (target or "New scene…",
+    Pause, Ask the reader, Chapter card, Writer's note, **Mini-game**), an "only if" condition on any step, choices (target or "New scene…",
     condition, hide or show-locked with a hint, effects, once-only), "then go to", timed choices, endings (true / good / neutral /
     bad / secret, title, text), and a live preview of the selected step.
   - **Cast:** characters, name colour, an expression picture each; starter cast (Mira, Ren, Sol, Kuro, Conductor).
   - **Pictures:** upload (shrunk in the browser to the plan's limit), rename, kind, delete, usage counts; the starter art pack.
+  - **Sounds:** upload music (loops) and sound effects (MP3, OGG, WAV, M4A), listen, rename, kind, delete, usage counts; the built-in
+    moods and effects to listen to. Used by Music / Sound steps and the title screen; packed into exported games.
+  - **Mini-games** (a Write step): Perfect timing (stop the slider in the zone), Tic-tac-toe, Memory pairs, Quick draw (reaction),
+    Find it in time, Button mash, Repeat the pattern, Whack-a-mole, Crack the code (higher/lower), Rock-paper-scissors. Each has
+    Easy / Normal / Hard, a title and instructions, three colours (main, accent, panel) with presets, "if they win" / "if they lose"
+    (carry on or go to a scene), "Try again", "Skip" (counts as a loss), a yes/no variable for the result, and "Try it" in the editor.
   - **Variables:** number / yes-no / text, starting values, notes, usage; renaming updates every reference; a syntax cheat sheet.
   - **Settings:** title, blurb, genre, rating, tags, cover; stage shape, text box style (Sakura, Midnight, Paper, Pixel), accent,
     font, text speed, title picture and music; starting scene, credits; publishing (public / unlisted / unpublish, share link); delete.
@@ -40,8 +46,8 @@ Built on [Anvil](https://anvil.works).
   - **Publish:** freezes a snapshot for readers (errors block it); keep editing privately, publish again to update.
   - **Package & sell:** downloads the novel as one self-contained HTML file or an itch.io-ready .zip (index.html + README),
     with every picture embedded, plus a selling guide.
-- **Plans:** Free = pictures up to 400 × 600 (either way round), 5 novels, 40 pictures each, "Made with ImgNovella" on exports.
-  Pro = 1200 × 1800, 100 novels, 300 pictures, credit can be removed. Pro is switched on by an admin (`#pro` sends a request).
+- **Plans:** Free = pictures up to 400 × 600 (either way round), 5 novels, 40 pictures each, 10 sounds of up to 1 MB,
+  "Made with ImgNovella" on exports. Pro = 1200 × 1800, 100 novels, 300 pictures, 60 sounds of up to 4 MB, credit can be removed. Pro is switched on by an admin (`#pro` sends a request).
 - **Guide** (`#guide`): concepts, conditions, text tags, reader controls, a "Coming from Ren'Py" table, selling.
 
 **For everyone:** landing page (creators + readers), sign-up with email and password, profile (name, one-line bio),
@@ -80,7 +86,7 @@ web/            core.js/core.css (engine + Sakura Pop tokens), app.js (header, f
   pages/_ed.html           ED: picture picker, preview, playtest, publish and Package & sell dialogs
   pages/edit.html          the editor; studio, discover, play, pro, guide, landing, profile, admin, auth
 client_code/    Main.py (the only Anvil form: bridge, sign-in, IMG_API), legal.py
-server_code/    Stories.py, Images.py (+ /img endpoint), DemoStories.py, DemoData.py, Admin.py, Accounts.py, Feedback.py, common.py (plans)
+server_code/    Stories.py, Images.py (+ /img endpoint), Sounds.py (+ /audio endpoint), DemoStories.py, DemoData.py, Admin.py, Accounts.py, Feedback.py, common.py (plans)
 assets/         icon.svg + PNG icons, demo-*.svg starter art (tools/make_art.py), served at _/theme/<name>
 tools/          sync_to_anvil.py (settings + table schema), deploy.py, check.py, make_art.py, preview/, testing/
 ```

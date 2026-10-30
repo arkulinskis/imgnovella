@@ -192,6 +192,64 @@ db_schema:
     indexes: []
     server: full
     title: Reports
+  sounds:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: owner
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: story
+      target: stories
+      type: link_single
+    - admin_ui:
+        order: 2
+        width: 200
+      name: key
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: name
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: kind
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: media
+      type: media
+    - admin_ui:
+        order: 6
+        width: 200
+      name: seconds
+      type: number
+    - admin_ui:
+        order: 7
+        width: 200
+      name: bytes
+      type: number
+    - admin_ui:
+        order: 8
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 9
+        width: 200
+      name: is_demo
+      type: bool
+    indexes: []
+    server: full
+    title: Sounds
   stories:
     client: none
     columns:
@@ -413,7 +471,7 @@ metadata:
   title: ImgNovella - make visual novels online
 name: ImgNovella
 native_deps:
-  head_html: "<script src=\"_/theme/legal-kit.js?v=67b66192ca\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
+  head_html: "<script src=\"_/theme/legal-kit.js?v=9fb737a166\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
     \ initial-scale=1, viewport-fit=cover\">\n<meta name=\"theme-color\" content=\"#ff4f8b\">\n<meta name=\"apple-mobile-web-app-capable\"\
     \ content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"\
     https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap\"\
@@ -422,7 +480,7 @@ native_deps:
     \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
     \    if (!ours) return;\n    document.querySelectorAll('link[rel~=\"icon\"]').forEach(function (l) { if (l !== ours) l.remove();\
     \ });\n  }\n  keep();\n  document.addEventListener('DOMContentLoaded', keep);\n  window.addEventListener('load', keep);\n\
-    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=0e1974873d\">\n<script src=\"_/theme/app.js?v=b005184f82\"\
+    })();\n</script>\n<link rel=\"stylesheet\" href=\"_/theme/app.css?v=3266197e0d\">\n<script src=\"_/theme/app.js?v=bbbf8bfef1\"\
     ></script>\n"
 package_name: ImgNovella
 runtime_options:

@@ -56,7 +56,7 @@ def load():
 
 def remove(remember=True):
     for s in app_tables.stories.search(is_demo=True):
-        for t in (app_tables.likes, app_tables.reports, app_tables.images):
+        for t in (app_tables.likes, app_tables.reports, app_tables.images, app_tables.sounds):
             for x in t.search(story=s):
                 x.delete()
     for name in DEMO_TABLES:
