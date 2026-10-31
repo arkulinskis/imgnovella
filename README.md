@@ -6,7 +6,7 @@ for anyone to play in the browser, or download them as standalone HTML games to 
 Built on [Anvil](https://anvil.works).
 
 - **App repo:** github.com/arkulinskis/imgnovella (branch `master`). Anvil pulls `master`.
-- **Live:** not published yet (https://imgnovella.anvil.app assumed until the user sends the address).
+- **Live:** https://imgnovella.anvil.app
 
 ## What it does
 
