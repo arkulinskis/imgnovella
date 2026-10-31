@@ -460,6 +460,7 @@
         '<a href="#discover" data-go="discover">Discover</a>' +
         '<a href="#guide" data-go="guide">Guide</a>' +
         '<a href="#pro" data-go="pro">Pro</a>' +
+        '<a href="https://prepsto.com/#f/qz375dr" target="_blank" rel="noopener" data-prepsto-open>Suggest an idea</a>' +
         '<button type="button" data-feedback>Send feedback</button>' +
         '<button type="button" data-lk-open="overview">Privacy &amp; Terms</button>' +
         '</div><p class="ui-footer-legal small muted">© ' + new Date().getFullYear() + ' ' + esc(UI.config.name) + '</p></div>';
