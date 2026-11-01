@@ -466,15 +466,48 @@ db_schema:
     title: Users
 metadata:
   description: 'Make visual novels in your browser: scenes, characters, branching choices and multiple endings. Share a link
-    or export a playable HTML game to sell.'
+    or export a playable HTML game to sell. No scripting.'
   logo_img: asset:icon-512.png
-  title: ImgNovella - make visual novels online
+  title: 'ImgNovella: make visual novels online, no coding'
 name: ImgNovella
 native_deps:
-  head_html: "<script src=\"_/theme/legal-kit.js?v=08c5acd43c\"></script>\n<meta name=\"viewport\" content=\"width=device-width,\
-    \ initial-scale=1, viewport-fit=cover\">\n<meta name=\"theme-color\" content=\"#ff4f8b\">\n<meta name=\"apple-mobile-web-app-capable\"\
-    \ content=\"yes\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"\
-    https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap\"\
+  head_html: "<script src=\"_/theme/legal-kit.js?v=08c5acd43c\"></script>\n<!-- seo:start (APP_MAKER/seo: edit seo/apps/imgnovella.json\
+    \ and run seo.py, not here) -->\n<link rel=\"canonical\" href=\"https://imgnovella.anvil.app/\">\n<meta name=\"robots\"\
+    \ content=\"index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1\">\n<meta name=\"keywords\" content=\"\
+    visual novel maker, make a visual novel online, Ren&#x27;Py alternative, interactive story maker, branching story creator,\
+    \ otome game maker, no-code game maker, itch.io HTML game, choose your own adventure maker\">\n<meta name=\"author\" content=\"\
+    Arkvital\">\n<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"ImgNovella\">\n\
+    <meta property=\"og:title\" content=\"ImgNovella: make visual novels online, no coding\">\n<meta property=\"og:description\"\
+    \ content=\"Make visual novels in your browser: scenes, characters, branching choices and multiple endings. Share a link\
+    \ or export a playable HTML game to sell. No scripting.\">\n<meta property=\"og:locale\" content=\"en_CA\">\n<meta property=\"\
+    og:url\" content=\"https://imgnovella.anvil.app/\">\n<meta property=\"og:image\" content=\"https://imgnovella.anvil.app/_/theme/og-image.png\"\
+    >\n<meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\">\n<meta property=\"\
+    og:image:alt\" content=\"ImgNovella: Make branching visual novels in your browser, then share or sell them\">\n<meta name=\"\
+    twitter:card\" content=\"summary_large_image\">\n<meta name=\"twitter:title\" content=\"ImgNovella: make visual novels\
+    \ online, no coding\">\n<meta name=\"twitter:description\" content=\"Make visual novels in your browser: scenes, characters,\
+    \ branching choices and multiple endings. Share a link or export a playable HTML game to sell. No scripting.\">\n<meta\
+    \ name=\"twitter:image\" content=\"https://imgnovella.anvil.app/_/theme/og-image.png\">\n<link rel=\"alternate\" type=\"\
+    text/plain\" title=\"ImgNovella for AI assistants\" href=\"https://imgnovella.anvil.app/llms.txt\">\n<script type=\"application/ld+json\"\
+    >{\"@context\": \"https://schema.org\", \"@graph\": [{\"@type\": \"WebApplication\", \"@id\": \"https://imgnovella.anvil.app/#app\"\
+    , \"name\": \"ImgNovella\", \"url\": \"https://imgnovella.anvil.app/\", \"description\": \"Make visual novels in your\
+    \ browser: scenes, characters, branching choices and multiple endings. Share a link or export a playable HTML game to\
+    \ sell. No scripting.\", \"image\": \"https://imgnovella.anvil.app/_/theme/og-image.png\", \"inLanguage\": \"en\", \"\
+    publisher\": {\"@id\": \"https://arkvital.com/#org\"}, \"keywords\": \"visual novel maker, make a visual novel online,\
+    \ Ren'Py alternative, interactive story maker, branching story creator, otome game maker, no-code game maker, itch.io\
+    \ HTML game, choose your own adventure maker\", \"applicationCategory\": \"DesignApplication\", \"operatingSystem\": \"\
+    Any (web browser)\", \"browserRequirements\": \"Requires JavaScript and a modern web browser\", \"featureList\": [\"Branching\
+    \ choices, variables, conditions and multiple endings\", \"Characters with expressions, backgrounds, transitions and CG\
+    \ illustrations\", \"Music moods, sound effects or your own audio\", \"Publish to play in the browser, or export a standalone\
+    \ HTML game\", \"A Discover page with genres, likes and a featured shelf\"], \"audience\": {\"@type\": \"Audience\", \"\
+    audienceType\": \"Writers and indie game makers who want to build visual novels without code\"}}, {\"@type\": \"WebSite\"\
+    , \"@id\": \"https://imgnovella.anvil.app/#site\", \"url\": \"https://imgnovella.anvil.app/\", \"name\": \"ImgNovella\"\
+    , \"publisher\": {\"@id\": \"https://arkvital.com/#org\"}}, {\"@type\": \"Organization\", \"@id\": \"https://arkvital.com/#org\"\
+    , \"name\": \"Arkvital\", \"url\": \"https://arkvital.com\", \"email\": \"arkvital@outlook.com\", \"address\": {\"@type\"\
+    : \"PostalAddress\", \"addressLocality\": \"Montreal\", \"addressRegion\": \"QC\", \"addressCountry\": \"CA\"}}]}</script>\n\
+    <!-- seo:end -->\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<meta\
+    \ name=\"theme-color\" content=\"#ff4f8b\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<link rel=\"\
+    preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n\
+    <link href=\"https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap\"\
     \ rel=\"stylesheet\">\n<link id=\"ui-favicon\" rel=\"icon\" type=\"image/svg+xml\" href=\"_/theme/icon.svg?v=7477069b30\"\
     >\n<link rel=\"apple-touch-icon\" href=\"_/theme/icon-180.png?v=7477069b30\">\n<script>\n/* Keep our tab icon: Anvil adds\
     \ its own <link rel=\"icon\">, so drop any other icon link. */\n(function () {\n  function keep() {\n    var ours = document.getElementById('ui-favicon');\n\
