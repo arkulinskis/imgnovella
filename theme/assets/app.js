@@ -2127,12 +2127,12 @@ function NovellaRuntime() {
     '.nvp.nvp-font-serif{font-family:Georgia,"Times New Roman",serif}.nvp.nvp-font-sans{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}.nvp.nvp-font-mono{font-family:ui-monospace,"Cascadia Mono",Consolas,"Courier New",monospace}',
     '.nvp-stage{position:relative;overflow:hidden;background:linear-gradient(160deg,#3a2f52,#1a1424);border-radius:calc(var(--u)*14);color:#fff;cursor:pointer}',
     '.nvp-bg,.nvp-bg img,.nvp-cg,.nvp-veil{position:absolute;inset:0;width:100%;height:100%}',
-    '.nvp-bg img{object-fit:cover;opacity:0}',
+    '.nvp-bg{z-index:0}.nvp-bg img{object-fit:cover;opacity:0}',  /* own layer: the fading pictures' z-index stays inside it, below the characters */
     '.nvp-bg img:not([src]),.nvp-bg img[src=""]{visibility:hidden}',
-    '.nvp-chars{position:absolute;inset:0;pointer-events:none}',
-    '.nvp-ch{position:absolute;bottom:0;height:80%;transform:translateX(-50%);transition:left .45s cubic-bezier(.3,.8,.3,1),filter .3s,transform .3s}',
+    '.nvp-chars{position:absolute;z-index:2;inset:0;pointer-events:none}',
+    '.nvp-ch{position:absolute;bottom:0;height:80%;width:max-content;transform:translateX(-50%);transition:left .45s cubic-bezier(.3,.8,.3,1),filter .3s,transform .3s}',
     '.nvp-landscape .nvp-ch{height:94%}',
-    '.nvp-ch img{height:100%;width:auto;display:block;filter:drop-shadow(0 calc(var(--u)*6) calc(var(--u)*10) rgba(0,0,0,.25))}',
+    '.nvp-ch img{height:100%;width:auto;max-width:none;display:block;filter:drop-shadow(0 calc(var(--u)*6) calc(var(--u)*10) rgba(0,0,0,.25))}',
     '.nvp-ch.noimg{width:calc(var(--u)*120);height:40%;border-radius:calc(var(--u)*60) calc(var(--u)*60) 0 0;background:rgba(255,255,255,.25);border:calc(var(--u)*2) dashed rgba(255,255,255,.7)}',
     '.nvp-ch.noimg img{display:none}.nvp-ch.noimg::after{content:attr(data-label);position:absolute;top:30%;left:0;right:0;text-align:center;font-weight:800;font-size:calc(var(--u)*14)}',
     '.nvp-ch.dim{filter:brightness(.72) saturate(.85)}.nvp-ch.talk{transform:translateX(-50%) scale(1.015)}',
@@ -2328,18 +2328,21 @@ NV.injectCss();
   var A = [];
   function add(kind, names, label) { names.forEach(function (n) { A.push({ key: 'demo:' + n, name: label(n), kind: kind }); }); }
   var nice = function (s) { return s.replace(/^(bg|cg|cover)-/, '').replace(/-/g, ' ').replace(/^\w/, function (c) { return c.toUpperCase(); }); };
-  add('bg', ['bg-sakura-park', 'bg-sakura-night', 'bg-classroom', 'bg-cafe', 'bg-station-night', 'bg-rooftop-sunset', 'bg-library', 'bg-bedroom'], nice);
-  ['mira', 'ren', 'sol'].forEach(function (c) { add('sprite', ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'].map(function (e) { return c + '-' + e; }), nice); });
-  add('sprite', ['kuro-neutral', 'kuro-happy', 'kuro-surprised', 'stranger-neutral', 'stranger-smile'], nice);
-  add('cg', ['cg-promise', 'cg-train'], nice);
-  add('cover', ['cover-cherry', 'cover-train', 'cover-rooftop', 'cover-library'], nice);
+  add('bg', ['bg-sakura-park', 'bg-sakura-night', 'bg-classroom', 'bg-cafe', 'bg-station-night', 'bg-rooftop-sunset', 'bg-library', 'bg-bedroom', 'bg-festival', 'bg-shrine', 'bg-beach', 'bg-spaceship'], nice);
+  ['mira', 'ren', 'sol', 'hana'].forEach(function (c) { add('sprite', ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'].map(function (e) { return c + '-' + e; }), nice); });
+  add('sprite', ['kuro-neutral', 'kuro-happy', 'kuro-surprised', 'stranger-neutral', 'stranger-smile', 'byte-neutral', 'byte-happy', 'byte-sad', 'byte-surprised', 'yoru-neutral', 'yoru-happy', 'yoru-surprised'], nice);
+  add('cg', ['cg-promise', 'cg-train', 'cg-fireworks'], nice);
+  add('cover', ['cover-cherry', 'cover-train', 'cover-rooftop', 'cover-library', 'cover-festival', 'cover-signal', 'cover-shrine', 'cover-cafe', 'cover-beach'], nice);
   NVT.ART = A;
   NVT.STARTER_CAST = [
     { id: 'mira', name: 'Mira', color: '#ff4f8b', base: 'mira', poses: ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'] },
     { id: 'ren', name: 'Ren', color: '#8a93d6', base: 'ren', poses: ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'] },
     { id: 'sol', name: 'Sol', color: '#ff9a3c', base: 'sol', poses: ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'] },
     { id: 'kuro', name: 'Kuro', color: '#ffd24a', base: 'kuro', poses: ['neutral', 'happy', 'surprised'] },
-    { id: 'conductor', name: 'Conductor', color: '#8fe3df', base: 'stranger', poses: ['neutral', 'smile'] }
+    { id: 'conductor', name: 'Conductor', color: '#8fe3df', base: 'stranger', poses: ['neutral', 'smile'] },
+    { id: 'hana', name: 'Hana', color: '#7a5aa8', base: 'hana', poses: ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'] },
+    { id: 'byte', name: 'Byte', color: '#3cc6c0', base: 'byte', poses: ['neutral', 'happy', 'sad', 'surprised'] },
+    { id: 'yoru', name: 'Yoru', color: '#f08a3c', base: 'yoru', poses: ['neutral', 'happy', 'surprised'] }
   ];
   NVT.KINDS = { bg: 'Background', sprite: 'Character', cg: 'CG (illustration)', cover: 'Cover', other: 'Other' };
   NVT.GENRES = ['Romance', 'Mystery', 'Fantasy', 'Sci-fi', 'Slice of life', 'Comedy', 'Drama', 'Horror', 'Adventure'];
@@ -2363,6 +2366,47 @@ NV.injectCss();
 
   /* ---------------------------------------------------------------- the story checker */
   NVT.isFile = function (key) { return /^a[0-9a-f]+$/.test(key || ''); };
+  /* Who is on stage? Follows every path through the story (choices, "then go to", jumps, mini-game results) and
+     lists lines spoken by a character with pictures who may not be shown at that point: no "Show" step yet, or
+     hidden earlier. A "Show" with an "only if" doesn't count as shown. Returns [{scene, k, who, msg}]. */
+  NVT.offStage = function (data) {
+    var byId = {}, pics = {}, names = {}, out = [], told = {};
+    (data.scenes || []).forEach(function (s) { byId[s.id] = s; });
+    (data.chars || []).forEach(function (c) { names[c.id] = c.name || 'A character'; if ((c.poses || []).some(function (p) { return p.img; })) pics[c.id] = 1; });
+    if (!byId[data.start]) return out;
+    var away = {}, todo = [data.start];
+    away[data.start] = Object.assign({}, pics);
+    function flow(to, set) {
+      if (!byId[to]) return;
+      var cur = away[to], grew = !cur;
+      cur = cur || {};
+      Object.keys(set).forEach(function (id) { if (!cur[id]) { cur[id] = 1; grew = true; } });
+      away[to] = cur;
+      if (grew && todo.indexOf(to) < 0) todo.push(to);
+    }
+    for (var guard = 0; todo.length && guard < 20000; guard++) {
+      var s = byId[todo.shift()], a = Object.assign({}, away[s.id]), stop = false;
+      (s.steps || []).forEach(function (x, i) {
+        if (stop) return;
+        if (x.t === 'show' && !x.if) delete a[x.char];
+        else if (x.t === 'hide') a[x.char] = 1;
+        else if (x.t === 'say' && x.who && a[x.who] && pics[x.who]) {
+          var key = s.id + ':' + (x.k || i);
+          if (!told[key]) {
+            told[key] = 1;
+            out.push({ scene: s.id, k: x.k || i, who: x.who, msg: names[x.who] + ' speaks in line ' + (i + 1) + ' but may not be on stage. Add a "Show character" step before it (or ignore this if they talk off-screen).' });
+          }
+        }
+        else if (x.t === 'jump' && byId[x.to]) { flow(x.to, a); if (!x.if) stop = true; }
+        else if (x.t === 'game') { if (x.win) flow(x.win, a); if (x.lose) flow(x.lose, a); }
+      });
+      if (stop) continue;
+      (s.choices || []).forEach(function (c) { flow(c.to, a); });
+      if (s.next) flow(s.next, a);
+    }
+    return out;
+  };
+
   NVT.lint = function (data, images, sounds) {
     var out = [], scenes = data.scenes || [], byId = {}, chars = {}, vars = (data.vars || []).map(function (v) { return v.name; });
     var have = {};
@@ -2423,9 +2467,10 @@ NV.injectCss();
         var s = byId[id];
         (s.choices || []).forEach(function (c) { queue.push(c.to); });
         if (s.next) queue.push(s.next);
-        (s.steps || []).forEach(function (x) { if (x.t === 'jump') queue.push(x.to); });
+        (s.steps || []).forEach(function (x) { if (x.t === 'jump') queue.push(x.to); if (x.t === 'game') { if (x.win) queue.push(x.win); if (x.lose) queue.push(x.lose); } });
       }
       scenes.forEach(function (s) { if (!seen[s.id]) e('warn', 'Nothing leads here: players can never reach this scene', s); });
+      NVT.offStage(data).forEach(function (w) { e('warn', w.msg, byId[w.scene], w.k); });
     }
     if (scenes.length && !scenes.some(function (s) { return s.ending; })) e('warn', 'Your novel has no endings yet. Mark a final scene as an ending to unlock the endings screen.');
     return out;
@@ -4075,35 +4120,32 @@ NV.injectCss();
           ['Does it work on my phone?', 'Yes, for reading and for writing. Novels can be portrait (made for phones) or landscape.']]
   };
 
+  // the scene behind the dialogue box: the park, Mira, petals, and the story map peeking in
   function heroArt() {
     var petals = '';
-    for (var i = 0; i < 9; i++) petals += '<i class="lp-petal" style="left:' + (8 + i * 11) + '%;top:' + (-10 - (i % 3) * 8) + '%;animation-delay:' + (i * -1.1) + 's;animation-duration:' + (8 + i % 4) + 's"></i>';
-    return '<div class="lp-art" aria-hidden="true">' + petals +
-      '<div class="lp-phone"><img class="bg" alt="" src="_/theme/demo-bg-sakura-park.svg"><img class="sp" alt="" src="_/theme/demo-mira-happy.svg">' +
-      '<div class="lp-chs"><span><i>1</i>Chase the sketches</span><span><i>2</i>Tell her how you feel 🔒</span></div>' +
-      '<div class="lp-box"><b>Mira</b>You caught the last one! You\'re fast, um…</div></div>' +
-      '<div class="lp-map"><p class="t">Story map</p><svg viewBox="0 0 220 210"><g fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--c-ink)" opacity=".6">' +
+    for (var i = 0; i < 12; i++) petals += '<i class="lp-petal" aria-hidden="true" style="left:' + (4 + i * 8) + '%;top:' + (-10 - (i % 3) * 8) + '%;animation-delay:' + (i * -1.1) + 's;animation-duration:' + (8 + i % 4) + 's"></i>';
+    return '<img class="bg" alt="" src="_/theme/demo-bg-sakura-park.svg"><img class="sp" alt="" src="_/theme/demo-mira-happy.svg">' + petals +
+      '<div class="lp-map" aria-hidden="true"><p class="t">Story map</p><svg viewBox="0 0 220 210"><g fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--c-ink)" opacity=".6">' +
       '<path d="M110 34 C110 60 50 50 50 82"/><path d="M110 34 C110 60 170 50 170 82"/><path d="M50 108 C50 136 110 126 110 152"/><path d="M170 108 C170 136 110 126 110 152" stroke-dasharray="6 5"/><path d="M170 108 C175 140 200 150 196 166"/></g>' +
       '<g font-family="Nunito, sans-serif" font-weight="800" font-size="10" text-anchor="middle">' +
       '<rect x="62" y="10" width="96" height="26" rx="10" fill="var(--c-brand-soft)" stroke="var(--c-outline)" stroke-width="2"/><text x="110" y="27" fill="var(--c-ink)">Petals on the path</text>' +
       '<rect x="10" y="82" width="80" height="26" rx="10" fill="var(--c-surface)" stroke="var(--c-outline)" stroke-width="2"/><text x="50" y="99" fill="var(--c-ink)">Paper chase</text>' +
       '<rect x="130" y="82" width="80" height="26" rx="10" fill="var(--c-surface)" stroke="var(--c-outline)" stroke-width="2"/><text x="170" y="99" fill="var(--c-ink)">Running late</text>' +
       '<rect x="70" y="152" width="80" height="26" rx="10" fill="#ffd24a" stroke="var(--c-outline)" stroke-width="2"/><text x="110" y="169" fill="#2a2238">★ The Promise</text>' +
-      '<rect x="160" y="166" width="56" height="26" rx="10" fill="#c9bfd6" stroke="var(--c-outline)" stroke-width="2"/><text x="188" y="183" fill="#2a2238">★ Bad</text></g></svg></div>' +
-      '<div class="lp-end"><small>True ending</small><strong>The Promise</strong><div class="dots"><i style="background:#ffd24a"></i><i style="background:#3cc6c0"></i><i></i></div></div></div>';
+      '<rect x="160" y="166" width="56" height="26" rx="10" fill="#c9bfd6" stroke="var(--c-outline)" stroke-width="2"/><text x="188" y="183" fill="#2a2238">★ Bad</text></g></svg></div>';
   }
 
   UI.page('landing', { title: 'Make visual novels online' }, function (view, ctx) {
     var me = ctx.me, C = COPY, esc = UI.esc;
-    var primary = me ? '<a class="ui-btn primary lg" href="#studio" data-go="studio">Open your studio ' + UI.icon('arrow') + '</a><a class="ui-btn lg" href="#discover" data-go="discover">' + UI.icon('play') + 'Play novels</a>'
-      : '<a class="ui-btn primary lg" href="#auth/signup" data-go="auth/signup">' + esc(C.cta) + ' ' + UI.icon('arrow') + '</a>' +
-        '<a class="ui-btn lg" href="#discover" data-go="discover">' + UI.icon('play') + 'Play a novel</a>';
+    var primary = me ? '<a class="ui-btn primary lg" href="#studio" data-go="studio"><span class="n">1</span>Open your studio ' + UI.icon('arrow') + '</a><a class="ui-btn lg" href="#discover" data-go="discover"><span class="n">2</span>Play novels</a>'
+      : '<a class="ui-btn primary lg" href="#auth/signup" data-go="auth/signup"><span class="n">1</span>' + esc(C.cta) + ' ' + UI.icon('arrow') + '</a>' +
+        '<a class="ui-btn lg" href="#discover" data-go="discover"><span class="n">2</span>Play a novel first</a>';
     view.innerHTML =
-      '<section class="lp-hero"><div class="ui-wrap"><div>' +
+      '<section class="lp-hero">' + heroArt() + '<div class="ui-wrap"><div class="lp-vnbox"><span class="who">ImgNovella</span>' +
         '<div class="eyebrow">' + esc(C.eyebrow) + '</div><h1>' + C.title + '</h1><p class="lp-lead">' + esc(C.lead) + '</p>' +
         '<div class="lp-cta">' + primary + '</div>' +
         '<div class="lp-proof">' + C.proof.map(function (p) { return '<span>' + UI.icon('check') + esc(p) + '</span>'; }).join('') + '</div>' +
-      '</div>' + heroArt() + '</div></section>' +
+      '</div></div></section>' +
       '<section class="lp-section" id="how"><div class="ui-wrap"><div class="lp-head"><h2>From first line to finished game</h2><p>Three steps, and you can do them all on a phone.</p></div>' +
         '<div class="lp-steps">' + C.steps.map(function (s) { return '<div class="ui-card lp-step"><h3>' + esc(s[0]) + '</h3><p class="muted">' + esc(s[1]) + '</p></div>'; }).join('') + '</div></div></section>' +
       '<section class="lp-section"><div class="ui-wrap"><div class="lp-head"><h2>Everything a visual novel needs</h2><p>The power of Ren\'Py, without the scripting, and a few things it never had.</p></div>' +

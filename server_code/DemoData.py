@@ -1,4 +1,4 @@
-"""Demo content, so the app never looks empty: three fictional creators and four published novels (built from
+"""Demo content, so the app never looks empty: three fictional creators and nine published novels (built from
 DemoStories, using only the built-in art). Loaded automatically the first time anyone opens the app
 (ensure_loaded), removed or reloaded from Admin -> Demo data. Removing it is remembered: it doesn't come back.
 
