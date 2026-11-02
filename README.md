@@ -52,7 +52,7 @@ Built on [Anvil](https://anvil.works).
   "Made with ImgNovella" on exports. Pro = 1200 × 1800, 100 novels, 300 pictures, 60 sounds of up to 4 MB, credit can be removed. Pro is switched on by an admin (`#pro` sends a request).
 - **Guide** (`#guide`): concepts, conditions, text tags, reader controls, a "Coming from Ren'Py" table, selling.
 
-**For everyone:** landing page (creators + readers), sign-up with email and password, profile (name, one-line bio),
+**For everyone:** landing page (creators + readers), sign-up with email and password or Google, profile (name, one-line bio),
 feedback form, Privacy & Terms (`#legal`).
 
 **For admins** (`#admin`; arkulinskis@gmail.com becomes an admin on first sign-in):
@@ -62,7 +62,7 @@ feedback form, Privacy & Terms (`#legal`).
 ## Setting it up in Anvil (once)
 
 1. In the Anvil editor: **Create app → Clone from GitHub**, and paste `https://github.com/arkulinskis/imgnovella`.
-2. **Users** service: email + password, sign-up allowed (already set in `anvil.yaml`; check it).
+2. **Users** service: email + password and "Continue with Google", sign-up allowed (already set in `anvil.yaml`; check it).
 3. Open the app in the editor. If it shows a **Schema Mismatch** alert, choose **"The schema of the source code is correct"** so Anvil creates the tables.
 4. **Run** it and sign up with **arkulinskis@gmail.com** straight away (that account becomes the admin).
 5. **Publish** (Publish → public URL, or your own domain).
