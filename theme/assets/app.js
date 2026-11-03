@@ -2328,11 +2328,11 @@ NV.injectCss();
   var A = [];
   function add(kind, names, label) { names.forEach(function (n) { A.push({ key: 'demo:' + n, name: label(n), kind: kind }); }); }
   var nice = function (s) { return s.replace(/^(bg|cg|cover)-/, '').replace(/-/g, ' ').replace(/^\w/, function (c) { return c.toUpperCase(); }); };
-  add('bg', ['bg-sakura-park', 'bg-sakura-night', 'bg-classroom', 'bg-cafe', 'bg-station-night', 'bg-rooftop-sunset', 'bg-library', 'bg-bedroom', 'bg-festival', 'bg-shrine', 'bg-beach', 'bg-spaceship'], nice);
+  add('bg', ['bg-sakura-park', 'bg-sakura-night', 'bg-classroom', 'bg-cafe', 'bg-station-night', 'bg-rooftop-sunset', 'bg-library', 'bg-bedroom', 'bg-festival', 'bg-shrine', 'bg-beach', 'bg-spaceship', 'bg-station-dawn'], nice);
   ['mira', 'ren', 'sol', 'hana'].forEach(function (c) { add('sprite', ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'].map(function (e) { return c + '-' + e; }), nice); });
   add('sprite', ['kuro-neutral', 'kuro-happy', 'kuro-surprised', 'stranger-neutral', 'stranger-smile', 'byte-neutral', 'byte-happy', 'byte-sad', 'byte-surprised', 'yoru-neutral', 'yoru-happy', 'yoru-surprised'], nice);
-  add('cg', ['cg-promise', 'cg-train', 'cg-fireworks'], nice);
-  add('cover', ['cover-cherry', 'cover-train', 'cover-rooftop', 'cover-library', 'cover-festival', 'cover-signal', 'cover-shrine', 'cover-cafe', 'cover-beach'], nice);
+  add('cg', ['cg-promise', 'cg-train', 'cg-fireworks', 'cg-lanterns', 'cg-wishrack'], nice);
+  add('cover', ['cover-cherry', 'cover-train', 'cover-rooftop', 'cover-library', 'cover-festival', 'cover-signal', 'cover-shrine', 'cover-cafe', 'cover-beach', 'cover-lantern'], nice);
   NVT.ART = A;
   NVT.STARTER_CAST = [
     { id: 'mira', name: 'Mira', color: '#ff4f8b', base: 'mira', poses: ['neutral', 'happy', 'sad', 'surprised', 'angry', 'shy'] },
