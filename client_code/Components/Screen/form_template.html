@@ -1,0 +1,15 @@
+---
+custom_component: true
+properties:
+  - name: screen
+    type: string
+    default_value: ""
+    description: Which engine screen to show (edit = the novel editor in theme/assets/nv-editor.js)
+toolbox_item:
+  title: Engine screen
+  group: ImgNovella
+help_text: |
+  ImgNovella's JavaScript editor, mounted when the component appears and destroyed (with a last autosave) when it
+  leaves. Call mount(args) with the address parts.
+---
+<div class="nv-screen-host"><div anvil:dom-node="host"></div></div>

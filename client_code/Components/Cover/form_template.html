@@ -1,0 +1,16 @@
+---
+custom_component: true
+properties:
+  - name: story
+    type: object
+    description: 'A novel card {title, cover, featured} from library / studio_home / admin_stories'
+    default_binding_prop: true
+  - name: featured_badge
+    type: boolean
+    default_value: false
+    description: Show the "Featured" badge on featured novels
+toolbox_item:
+  title: Novel cover
+  group: ImgNovella
+---
+<div class="nv-cover-box"></div>

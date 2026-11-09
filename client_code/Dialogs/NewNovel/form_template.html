@@ -1,0 +1,25 @@
+<div class="ui nv-dialog">
+  <h2 class="dlg-h">New novel</h2>
+  <div class="ui-stack">
+    <label class="ui-field"><span>Title</span>
+      <anvil-component type="TextBox" name="title_box" prop:placeholder="e.g. The Lighthouse Letters"></anvil-component>
+    </label>
+    <div class="ui-field"><span>Start from</span>
+      <div class="tpl">
+        <anvil-component type="RadioButton" name="starter_radio" prop:group_name="nn_template" prop:value="starter" prop:selected="true" prop:text="The starter story" prop:role='["tpl-opt"]'></anvil-component>
+        <anvil-component type="RadioButton" name="blank_radio" prop:group_name="nn_template" prop:value="blank" prop:text="A blank page" prop:role='["tpl-opt"]'></anvil-component>
+      </div>
+      <p class="ui-hint">The starter story is "Cherry Blossom Promise": 9 scenes, 3 endings, variables and a timed choice, so you learn by remixing. A blank page has one scene and a background.</p>
+    </div>
+    <div class="ui-field"><span>Stage shape</span>
+      <div class="tpl">
+        <anvil-component type="RadioButton" name="portrait_radio" prop:group_name="nn_shape" prop:value="portrait" prop:selected="true" prop:text="Portrait, made for phones (2:3)" prop:role='["tpl-opt"]'></anvil-component>
+        <anvil-component type="RadioButton" name="landscape_radio" prop:group_name="nn_shape" prop:value="landscape" prop:text="Landscape, classic desktop (3:2)" prop:role='["tpl-opt"]'></anvil-component>
+      </div>
+    </div>
+    <div class="ui-row end">
+      <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn", "btn-ghost"]'></anvil-component>
+      <anvil-component type="Button" name="create_button" prop:text="Create" prop:role='["btn", "btn-primary", "ic-sparkle"]'></anvil-component>
+    </div>
+  </div>
+</div>

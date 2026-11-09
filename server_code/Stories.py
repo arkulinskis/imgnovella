@@ -168,7 +168,8 @@ def clean_story(data):
     """The story document, keeping only known fields with sane types and sizes."""
     if not isinstance(data, dict):
         data = {}
-    st = data.get("settings") if isinstance(data.get("settings"), dict) else {}
+    st = data.get("settings") if isinstance(data.get("settings"), dict) else None
+    st = st or {}
     settings = {k: (st.get(k) if st.get(k) in opts else opts[0]) for k, opts in SETTINGS.items()}
     settings.update({"accent": st.get("accent") if HEX.match(str(st.get("accent") or "")) else "#ff4f8b",
                      "cps": int(_num(st.get("cps"), 0, 200, 45)), "credits": _s(st.get("credits"), 1500),
@@ -513,7 +514,7 @@ def record_play(slug, event, ending_id=None):
     key = "%s:%s:%s" % (slug, event, ending_id or "")
     if key in done or C.rate_limited("record_play", 60, 3600):
         return C.ok()
-    anvil.server.session["played"] = (done + [key])[-200:]
+    getattr(anvil.server, "session")["played"] = (done + [key])[-200:]
     if event == "start":
         r["plays"] = int(r["plays"] or 0) + 1
     elif event == "ending" and isinstance(ending_id, str) and ID.match(ending_id):

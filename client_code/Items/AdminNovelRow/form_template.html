@@ -1,0 +1,16 @@
+<div class="ui-item ad-novel">
+  <div class="ad-novel-cover"><anvil-component type="ImgNovella.Components.Cover" name="cover"></anvil-component></div>
+  <div class="grow">
+    <div class="ui-row ad-novel-title">
+      <anvil-component type="Label" name="title" prop:role='["strong"]'></anvil-component>
+      <anvil-component type="Label" name="demo_badge" prop:text="Demo" prop:role='["badge"]'></anvil-component>
+      <anvil-component type="Label" name="reports_badge" prop:role='["badge", "badge-bad"]'></anvil-component>
+    </div>
+    <anvil-component type="Label" name="line" prop:role='["fine-print"]'></anvil-component>
+    <div class="ui-row ad-novel-acts">
+      <a class="ui-btn sm" href="#admin/novels" anvil:name="open_link"><i class="ic ic-play"></i>Open</a>
+      <anvil-component type="CheckBox" name="featured_box" prop:text="Featured"></anvil-component>
+      <anvil-component type="CheckBox" name="hidden_box" prop:text="Taken down"></anvil-component>
+    </div>
+  </div>
+</div>

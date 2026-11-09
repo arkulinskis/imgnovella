@@ -1,0 +1,54 @@
+<anvil-form layout="ImgNovella.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap pl-wrap">
+      <div class="ui-empty" anvil:name="error_box">
+        <i class="ic ic-book"></i>
+        <h3>We couldn&#39;t open this novel</h3>
+        <anvil-component type="Label" name="error_text"></anvil-component>
+        <a class="ui-btn primary" href="#discover">Find another story</a>
+      </div>
+      <div class="pl" anvil:name="main">
+        <div class="pl-stage" anvil:name="stage">
+          <anvil-component type="ImgNovella.Components.Player" name="player"></anvil-component>
+        </div>
+        <aside class="pl-info">
+          <div class="pl-draft" anvil:name="draft_note"><i class="ic ic-edit"></i> You&#39;re playing your draft. Readers see the published version.</div>
+          <div>
+            <div class="ui-row">
+              <anvil-component type="Label" name="genre" prop:role='["badge"]'></anvil-component>
+              <anvil-component type="Label" name="rating" prop:role='["badge"]'></anvil-component>
+              <anvil-component type="Label" name="featured" prop:text="Featured" prop:role='["badge", "badge-brand"]'></anvil-component>
+            </div>
+            <anvil-component type="Label" name="title" prop:role='["pl-title"]'></anvil-component>
+            <div class="pl-by">
+              <anvil-component type="Label" name="by" prop:role='["contents"]'></anvil-component>
+              <anvil-component type="Label" name="bio" prop:role='["pl-bio"]'></anvil-component>
+            </div>
+          </div>
+          <anvil-component type="Label" name="blurb" prop:role='["pl-blurb"]'></anvil-component>
+          <anvil-component type="RepeatingPanel" name="tags" prop:item_template="ImgNovella.Items.Tag" prop:role='["pl-tags"]'></anvil-component>
+          <div class="pl-acts">
+            <anvil-component type="Button" name="like_button" prop:text="Like" prop:role='["btn", "ic-heart"]'></anvil-component>
+            <anvil-component type="Button" name="share_button" prop:text="Share" prop:role='["btn", "ic-link"]'></anvil-component>
+            <a class="ui-btn" href="#studio" anvil:name="edit_link"><i class="ic ic-edit"></i>Edit</a>
+          </div>
+          <div class="ui-card pl-nums">
+            <div><anvil-component type="Label" name="plays" prop:role='["pl-num"]'></anvil-component><span>plays</span></div>
+            <div><anvil-component type="Label" name="endings" prop:role='["pl-num"]'></anvil-component><span>endings</span></div>
+            <div><anvil-component type="Label" name="minutes" prop:role='["pl-num"]'></anvil-component><span>minutes</span></div>
+          </div>
+          <div class="ui-card pl-ends" anvil:name="ends_card">
+            <h3>Endings <anvil-component type="Label" name="found" prop:role='["pl-found"]'></anvil-component></h3>
+            <anvil-component type="RepeatingPanel" name="ends" prop:item_template="ImgNovella.Items.EndingRow" prop:role='["pl-ends-list"]'></anvil-component>
+          </div>
+          <p class="small muted pl-tip">Tip: tap or press Space to continue, Backspace to go back, and Esc for the menu. Your saves stay on this device.</p>
+          <anvil-component type="Button" name="report_button" prop:text="Report this novel" prop:role='["btn", "btn-ghost", "btn-sm", "ic-info"]'></anvil-component>
+        </aside>
+      </div>
+      <div class="pl-more" anvil:name="more_box">
+        <anvil-component type="Label" name="more_title" prop:role='["sec-title"]'></anvil-component>
+        <anvil-component type="RepeatingPanel" name="more" prop:item_template="ImgNovella.Items.NovelCard" prop:role='["dc-grid"]'></anvil-component>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

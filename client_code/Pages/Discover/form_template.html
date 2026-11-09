@@ -1,0 +1,38 @@
+<anvil-form layout="ImgNovella.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="dc-head">
+        <div>
+          <h1>Discover stories with choices</h1>
+          <p class="muted dc-lead">Free to play in your browser. Every choice matters; collect every ending.</p>
+        </div>
+        <div class="dc-search">
+          <anvil-component type="TextBox" name="search_box" prop:type="search" prop:placeholder="Search titles, creators, tags"></anvil-component>
+          <anvil-component type="Button" name="search_button" prop:text="Search" prop:role='["btn", "btn-icon", "ic-search"]'></anvil-component>
+        </div>
+      </div>
+      <anvil-component type="RepeatingPanel" name="chips" prop:item_template="ImgNovella.Items.GenreChip" prop:role='["dc-chips"]'></anvil-component>
+      <div anvil:name="featured_box">
+        <h2 class="dc-h2"><i class="ic ic-star"></i> Featured</h2>
+        <anvil-component type="RepeatingPanel" name="featured" prop:item_template="ImgNovella.Items.FeaturedCard" prop:role='["dc-feat"]'></anvil-component>
+      </div>
+      <div class="ui-row between dc-list-head">
+        <h2 class="dc-h2"><anvil-component type="Label" name="list_title" prop:role='["contents"]'></anvil-component> <anvil-component type="Label" name="total" prop:role='["dc-total"]'></anvil-component></h2>
+        <anvil-component type="DropDown" name="sort_box" prop:role='["dc-sort"]'></anvil-component>
+      </div>
+      <anvil-component type="RepeatingPanel" name="grid" prop:item_template="ImgNovella.Items.NovelCard" prop:role='["dc-grid"]'></anvil-component>
+      <div class="ui-empty" anvil:name="empty">
+        <i class="ic ic-search"></i>
+        <h3>No novels found</h3>
+        <p>Try another word or genre. Or write the story you wanted to read!</p>
+      </div>
+      <div class="ui-card dc-cta">
+        <div>
+          <h3>Got a story in you?</h3>
+          <p class="muted">Make your own visual novel in the browser, then share it or sell it.</p>
+        </div>
+        <a class="ui-btn primary" href="#auth/signup" anvil:name="cta_link"><i class="ic ic-edit"></i>Start creating</a>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>
