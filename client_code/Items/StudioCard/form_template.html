@@ -1,0 +1,21 @@
+<div class="sd-card-box">
+  <article class="ui-card sd-card">
+    <a href="#studio" anvil:name="cover_link"><anvil-component type="ImgNovella.Components.Cover" name="cover"></anvil-component></a>
+    <div class="sd-body">
+      <div class="sd-meta">
+        <anvil-component type="Label" name="status_badge" prop:role='["badge"]'></anvil-component>
+        <anvil-component type="Label" name="changes_badge" prop:text="Unpublished edits" prop:role='["badge", "badge-warn"]'></anvil-component>
+        <anvil-component type="Label" name="genre_badge" prop:role='["badge"]'></anvil-component>
+      </div>
+      <anvil-component type="Label" name="title" prop:role='["sd-title"]'></anvil-component>
+      <anvil-component type="Label" name="nums" prop:role='["sd-nums"]'></anvil-component>
+      <anvil-component type="Label" name="edited" prop:role='["fine-print"]'></anvil-component>
+      <div class="sd-acts">
+        <a class="ui-btn primary" href="#studio" anvil:name="edit_link"><i class="ic ic-edit"></i>Edit</a>
+        <a class="ui-btn" href="#studio" anvil:name="play_link"><i class="ic ic-play"></i>Play</a>
+        <anvil-component type="Button" name="dup_button" prop:text="Duplicate" prop:tooltip="Duplicate" prop:role='["btn", "btn-ghost", "btn-icon", "ic-copy"]'></anvil-component>
+        <anvil-component type="Button" name="del_button" prop:text="Delete" prop:tooltip="Delete" prop:role='["btn", "btn-ghost", "btn-icon", "ic-trash"]'></anvil-component>
+      </div>
+    </div>
+  </article>
+</div>

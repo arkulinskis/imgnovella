@@ -1,0 +1,18 @@
+<div class="ui-item ad-report">
+  <div class="grow">
+    <div class="meta">
+      <anvil-component type="Label" name="status" prop:role='["badge"]'></anvil-component>
+      <anvil-component type="Label" name="by" prop:role='["strong"]'></anvil-component>
+      <anvil-component type="Label" name="when"></anvil-component>
+    </div>
+    <p class="ad-report-story">
+      <a href="#admin/reports" anvil:name="story_link"><anvil-component type="Label" name="story_title" prop:role='["contents"]'></anvil-component></a>
+      <anvil-component type="Label" name="story_line" prop:role='["contents"]'></anvil-component>
+    </p>
+    <anvil-component type="Label" name="reason" prop:role='["ad-msg"]'></anvil-component>
+    <div class="ui-row" anvil:name="actions">
+      <anvil-component type="Button" name="dismiss_button" prop:text="Nothing wrong" prop:role='["btn", "btn-sm", "ic-check"]'></anvil-component>
+      <anvil-component type="Button" name="hide_button" prop:text="Take the novel down" prop:role='["btn", "btn-sm", "btn-danger", "ic-eyeoff"]'></anvil-component>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+<anvil-form layout="ImgNovella.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="ui-wrap">
+      <div class="sd-hero">
+        <div>
+          <anvil-component type="Label" name="hello" prop:role='["page-title"]'></anvil-component>
+          <anvil-component type="Label" name="lead" prop:role='["sd-lead"]'></anvil-component>
+        </div>
+        <anvil-component type="Button" name="new_button" prop:text="New novel" prop:role='["btn", "btn-primary", "btn-lg", "ic-plus"]'></anvil-component>
+      </div>
+      <div class="sd-stats" anvil:name="stats">
+        <div class="ui-card"><anvil-component type="Label" name="t_novels" prop:role='["sd-num"]'></anvil-component><span>novels</span></div>
+        <div class="ui-card"><anvil-component type="Label" name="t_published" prop:role='["sd-num"]'></anvil-component><span>published</span></div>
+        <div class="ui-card"><anvil-component type="Label" name="t_plays" prop:role='["sd-num"]'></anvil-component><span>plays</span></div>
+        <div class="ui-card"><anvil-component type="Label" name="t_likes" prop:role='["sd-num"]'></anvil-component><span>likes</span></div>
+      </div>
+      <div class="sd-list">
+        <anvil-component type="RepeatingPanel" name="list" prop:item_template="ImgNovella.Items.StudioCard" prop:role='["contents"]'></anvil-component>
+        <button type="button" class="sd-new" anvil:on-dom:click="self.new_tile_click"><i class="ic ic-plus"></i><span>New novel</span><anvil-component type="Label" name="count_line" prop:role='["sd-count"]'></anvil-component></button>
+      </div>
+      <div class="ui-card sd-plan" anvil:name="plan_card">
+        <div>
+          <h3><i class="ic ic-star"></i> You&#39;re on the Free plan</h3>
+          <anvil-component type="Label" name="plan_line" prop:role='["fine-print"]'></anvil-component>
+        </div>
+        <a class="ui-btn" href="#pro">See Pro <i class="ic ic-arrow"></i></a>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>
