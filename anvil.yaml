@@ -519,7 +519,7 @@ native_deps:
     <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). No floating button, no cookies, nothing loads until it is opened. Codes: APP_MAKER/prepsto-links.json -->
     <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="qz375dr" data-button="false" data-label="Submit feedback" async></script>
     <link rel="stylesheet" href="_/theme/icons.css?v=74240e1287">
-    <link rel="stylesheet" href="_/theme/app.css?v=e825c62f4a">
+    <link rel="stylesheet" href="_/theme/app.css?v=95f35f0c81">
     <script src="_/theme/app-kit.js?v=7f0b8a1181"></script>
     <script src="_/theme/nv-kit.js?v=bdc572dff4"></script>
     <script src="_/theme/nv-runtime.js?v=005d7710d8"></script>
