@@ -494,7 +494,7 @@ native_deps:
     \ sell. No scripting.\", \"image\": \"https://imgnovella.anvil.app/_/theme/og-image.png\", \"serviceType\": \"Make branching\
     \ visual novels in your browser, then share or sell them\", \"provider\": {\"@id\": \"https://arkvital.com/#org\"}, \"\
     areaServed\": \"Worldwide\", \"availableChannel\": {\"@type\": \"ServiceChannel\", \"serviceUrl\": \"https://imgnovella.anvil.app/\"\
-    , \"name\": \"Web browser\"}, \"availableLanguage\": \"en\", \"audience\": {\"@type\": \"Audience\", \"audienceType\"\
+    , \"name\": \"Web browser\", \"availableLanguage\": \"en\"}, \"audience\": {\"@type\": \"Audience\", \"audienceType\"\
     : \"Writers and indie game makers who want to build visual novels without code\"}}, {\"@type\": \"WebSite\", \"@id\":\
     \ \"https://imgnovella.anvil.app/#site\", \"url\": \"https://imgnovella.anvil.app/\", \"name\": \"ImgNovella\", \"publisher\"\
     : {\"@id\": \"https://arkvital.com/#org\"}}, {\"@type\": \"Organization\", \"@id\": \"https://arkvital.com/#org\", \"\
