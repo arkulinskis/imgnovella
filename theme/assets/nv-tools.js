@@ -179,6 +179,46 @@
     if (s.next) out.push({ to: s.next, kind: 'next', label: '' });
     return out;
   };
+  /* ---------------------------------------------------------------- routes + playtest coverage (Routes tab) */
+  // The shortest way from the start to every scene, breadth first over choices, then-go-to, jumps, game win/lose and
+  // timed-choice timeouts. Conditions are ignored (a route can need the right variables). Returns
+  // {sceneId: [{from, kind, label, choice}]} for every scene that can be reached.
+  NVT.routes = function (data) {
+    var by = {}, prev = {}, out = {};
+    (data.scenes || []).forEach(function (s) { by[s.id] = s; });
+    if (!data.start || !by[data.start]) return out;
+    var queue = [data.start];
+    prev[data.start] = null;
+    while (queue.length) {
+      var sid = queue.shift(), s = by[sid];
+      var edges = (s.choices || []).filter(function (c) { return c.to; }).map(function (c) { return { to: c.to, kind: 'choice', label: c.text, choice: c.id }; });
+      NVT.targets(s).forEach(function (t) { if (t.kind !== 'choice') edges.push(t); });
+      edges.forEach(function (e) {
+        if (!by[e.to] || prev.hasOwnProperty(e.to)) return;
+        prev[e.to] = { from: sid, kind: e.kind, label: e.label || '', choice: e.choice || null };
+        queue.push(e.to);
+      });
+    }
+    Object.keys(prev).forEach(function (id) {
+      var path = [], cur = id, guard = 0;
+      while (prev[cur] && guard++ < 1000) { path.unshift(prev[cur]); cur = prev[cur].from; }
+      out[id] = path;
+    });
+    return out;
+  };
+  function covKey(slug) { return 'nved-cov:' + slug; }
+  NVT.cov = function (slug) {
+    try { var c = JSON.parse(localStorage.getItem(covKey(slug)) || 'null'); if (c && c.scenes) return c; } catch (e) {}
+    return { scenes: {}, endings: {} };
+  };
+  NVT.covAdd = function (slug, sceneId, ending) {
+    var c = NVT.cov(slug);
+    c.endings = c.endings || {};
+    (ending ? c.endings : c.scenes)[sceneId] = Date.now();
+    try { localStorage.setItem(covKey(slug), JSON.stringify(c)); } catch (e) {}
+  };
+  NVT.covClear = function (slug) { try { localStorage.removeItem(covKey(slug)); } catch (e) {} };
+
   NVT.layout = function (data) {
     var byId = {}, depth = {}, order = [], scenes = data.scenes || [];
     scenes.forEach(function (s) { byId[s.id] = s; });

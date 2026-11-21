@@ -40,7 +40,14 @@ class Studio(StudioTemplate):
     def _new(self):
         from ...Dialogs.NewNovel import NewNovel
         r = alert(NewNovel(), buttons=[], role="app-dialog", dismissible=True)
-        if r:
+        if r and r["template"] == "twine":
+            i = r.get("info") or {}
+            state.toast("Imported %s, %s and %s. Your Twine logic is in writer's notes where it needs redoing." % (
+                state.plural(i.get("scenes") or 0, "scene"), state.plural(i.get("choices") or 0, "choice"),
+                state.plural(i.get("chars") or 0, "character")) if i.get("notes") else "Imported %s and %s. Have fun." % (
+                state.plural(i.get("scenes") or 0, "scene"), state.plural(i.get("choices") or 0, "choice")), "ok")
+            router.go("edit", r["id"], "map")
+        elif r:
             state.toast("Created! Have fun.", "ok")
             router.go("edit", r["id"], "map" if r["template"] == "starter" else "write")
 

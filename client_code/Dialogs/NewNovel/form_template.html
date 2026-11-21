@@ -5,11 +5,18 @@
       <anvil-component type="TextBox" name="title_box" prop:placeholder="e.g. The Lighthouse Letters"></anvil-component>
     </label>
     <div class="ui-field"><span>Start from</span>
-      <div class="tpl">
+      <div class="tpl tpl-3">
         <anvil-component type="RadioButton" name="starter_radio" prop:group_name="nn_template" prop:value="starter" prop:selected="true" prop:text="The starter story" prop:role='["tpl-opt"]'></anvil-component>
         <anvil-component type="RadioButton" name="blank_radio" prop:group_name="nn_template" prop:value="blank" prop:text="A blank page" prop:role='["tpl-opt"]'></anvil-component>
+        <anvil-component type="RadioButton" name="twine_radio" prop:group_name="nn_template" prop:value="twine" prop:text="Import from Twine" prop:role='["tpl-opt"]'></anvil-component>
       </div>
-      <p class="ui-hint">The starter story is "Cherry Blossom Promise": 9 scenes, 3 endings, variables and a timed choice, so you learn by remixing. A blank page has one scene and a background.</p>
+      <anvil-component type="Label" name="tpl_hint" prop:role='["nn-hint"]' prop:text="The starter story is &quot;Cherry Blossom Promise&quot;: 9 scenes, 3 endings, variables and a timed choice, so you learn by remixing. A blank page has one scene and a background."></anvil-component>
+    </div>
+    <div class="ui-field nn-twine" anvil:name="twine_box">
+      <span>Your Twine story</span>
+      <anvil-component type="FileLoader" name="twine_file" prop:text="Choose a .twee or Twine .html file" prop:role='["btn", "ic-upload"]' prop:file_types=".twee,.tw,.txt,.html,.htm"></anvil-component>
+      <anvil-component type="TextArea" name="twine_text" prop:placeholder=":: Start&#10;The fog rolls in over the dock.&#10;Mara: You came back.&#10;[[Climb the stairs->Tower]]&#10;[[Walk away|Shore]]" prop:height="150"></anvil-component>
+      <p class="ui-hint">Paste Twee (Twine 2: Build, then Export as Twee) or choose a published Twine 2 .html file. Passages become scenes, links become choices, "Name: line" speakers become your cast, and &lt;&lt;set&gt;&gt; / (set:) become variables. Other macros are kept as writer's notes for you to redo. Leave the title empty to use the Twine story's name.</p>
     </div>
     <div class="ui-field"><span>Stage shape</span>
       <div class="tpl">

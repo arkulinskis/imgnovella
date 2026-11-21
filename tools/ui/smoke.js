@@ -126,7 +126,7 @@
     await sleep(1500);
     check('#edit (map)', /Smoke Test Novel|Map/);
     const editId = location.hash.split('/')[1];
-    for (const tab of ['write', 'cast', 'pics', 'sounds', 'vars', 'settings', 'map']) {
+    for (const tab of ['write', 'cast', 'pics', 'sounds', 'vars', 'routes', 'settings', 'map']) {
       await open('#edit/' + editId + '/' + tab, null, () => $('.ed'));
     }
     await open('#studio', /Smoke Test Novel/, () => $$('.sd-card').length);

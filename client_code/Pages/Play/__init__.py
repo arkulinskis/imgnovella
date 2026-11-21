@@ -8,6 +8,9 @@ from ._anvil_designer import PlayTemplate
 from ... import nv, router, state
 
 
+MIN_READERS = 5  # "38% of readers chose this" shows once this many readers chose in that scene
+
+
 def _loose(x):
     """Server replies are plain dicts; this keeps the validator from guessing narrower types."""
     return x
@@ -43,7 +46,7 @@ class Play(PlayTemplate):
         self.stage.classes["landscape"] = (r["data"].get("settings") or {}).get("orientation") == "landscape"
         self._draw()
         self.player.play(r["data"], ("draft-" if r.get("draft") else "") + self.slug, c["title"], c["author"],
-                         self._started, self._ended)
+                         self._started, self._ended, self._chose, self._choice_pcts())
         self._more()
 
     def leave(self):
@@ -119,7 +122,28 @@ class Play(PlayTemplate):
         self.more_title.text = "More by " + self.R["story"]["author"]
         self.more.items = stories
 
+    def _choice_pcts(self):
+        """How readers chose, per choice: its share of the picks in its scene, once 5 readers have chosen there."""
+        counts = self.R.get("choice_counts") or {}
+        out = {}
+        if not counts or self.R.get("draft"):
+            return out
+        for sc in self.R["data"].get("scenes") or []:
+            ids = [ch.get("id") for ch in (sc.get("choices") or []) if ch.get("id")]
+            total = sum(int(counts.get(i) or 0) for i in ids)
+            if len(ids) > 1 and total >= MIN_READERS:
+                for i in ids:
+                    out[i] = round(int(counts.get(i) or 0) * 100.0 / total)
+        return out
+
     # ---- the player's hooks
+    def _chose(self, choice_id):
+        if not self.R.get("draft") and choice_id:
+            try:
+                anvil.server.call_s("record_play", self.slug, "choice", str(choice_id))
+            except Exception as e:
+                print("record_play: %r" % e)
+
     def _started(self):
         if not self.R.get("draft"):
             try:

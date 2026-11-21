@@ -715,10 +715,10 @@ function NovellaRuntime() {
     if (ro) ro.observe(host); else window.addEventListener('resize', fit);
     fit();
 
-    function toast(msg) {
+    function toast(msg, ms) {
       var t = $('[data-toast]');
       t.textContent = msg; t.classList.add('on');
-      clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('on'); }, 1600);
+      clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('on'); }, ms || 1600);
     }
 
     /* ---------------- state */
@@ -1016,6 +1016,14 @@ function NovellaRuntime() {
           if (pick) choose(pick.c.id);
         }, sc.timer * 1000);
       }
+      // route autopilot (the editor's Routes tab): pick the route's choice by itself after a moment
+      var route = opts.route || null;
+      var hit = route && list.filter(function (o) { return !o.locked && route.indexOf(o.c.id) >= 0; })[0];
+      if (hit) {
+        var btn = choicesEl.querySelector('[data-ch="' + hit.c.id.replace(/"/g, '') + '"]'), myg = gen;
+        if (btn) btn.classList.add('nvp-route');
+        setTimeout(function () { if (myg === gen && !destroyed && !choicesEl.hidden) choose(hit.c.id); }, 700);
+      }
     }
     function choose(id) {
       var sc = scene(), c = (sc.choices || []).filter(function (x) { return x.id === id; })[0];
@@ -1026,6 +1034,10 @@ function NovellaRuntime() {
       st.chosen[c.id] = 1; P.chose[c.id] = 1; persist();
       st.log.push({ who: '', choice: true, text: RT.plain(c.text, st.vars) });
       Audio.sfx('pop');
+      if (opts.onChoice) try { opts.onChoice(c.id); } catch (er) {}
+      // how readers chose (web player only): "38% of readers chose this"
+      var pct = opts.choicePcts && Object.prototype.hasOwnProperty.call(opts.choicePcts, c.id) ? opts.choicePcts[c.id] : null;
+      if (typeof pct === 'number' && isFinite(pct)) toast(Math.round(pct) + '% of readers chose this', 2600);
       if (c.to && scenes[c.to]) goScene(c.to); else finish(null);
     }
     function finish(sc) {
@@ -1394,6 +1406,7 @@ function NovellaRuntime() {
     '.nvp-choices button b{flex:none;width:calc(var(--u)*24);height:calc(var(--u)*24);border-radius:50%;display:grid;place-items:center;background:var(--acc);color:var(--acc-ink);font-size:calc(var(--u)*12);border:calc(var(--u)*2) solid #2a2238}',
     '.nvp-choices button span{flex:1}.nvp-choices button small{display:block;font-weight:600;font-size:.78em;opacity:.8}',
     '.nvp-choices button em{font-style:normal;opacity:.5}',
+    '.nvp-choices button.nvp-route{outline:calc(var(--u)*3) dashed var(--acc);outline-offset:calc(var(--u)*3)}',
     '.nvp-choices button.locked{background:#e9e4ef;color:#7a6f88;box-shadow:0 calc(var(--u)*3) 0 #8a7f98;border-color:#8a7f98;cursor:not-allowed}.nvp-choices button.locked b{background:#bdb3c9}',
     '.nvp-tb-midnight .nvp-choices button{background:rgba(18,20,48,.92);color:#eef0ff;border:1px solid var(--acc);box-shadow:none}.nvp-tb-midnight .nvp-choices button:hover:not(:disabled){background:rgba(40,44,90,.95)}',
     '.nvp-tb-pixel .nvp-choices button{border-radius:0;background:#1c1630;color:#fff;border-color:#f4f1ff;box-shadow:none}',

@@ -15,13 +15,16 @@ class Player(PlayerTemplate):
         self._hooks = {}
         super().__init__(**properties)
 
-    def play(self, data, storage_key, title="", author="", on_start=None, on_ending=None):
+    def play(self, data, storage_key, title="", author="", on_start=None, on_ending=None, on_choice=None, choice_pcts=None):
+        """choice_pcts: {choice id: percent of readers} for "38% of readers chose this" after each pick (or None)."""
         self.stop()
-        self._hooks = {"start": on_start, "ending": on_ending}
-        opts = nv.js_value({"storageKey": storage_key, "meta": {"title": title, "author": author}, "branding": False})
+        self._hooks = {"start": on_start, "ending": on_ending, "choice": on_choice}
+        opts = nv.js_value({"storageKey": storage_key, "meta": {"title": title, "author": author}, "branding": False,
+                            "choicePcts": choice_pcts or {}})
         opts.resolve = window.NVT.img
         opts.onStart = self._started
         opts.onEnding = self._ended
+        opts.onChoice = self._chose
         self.player = window.NV.mount(self.dom_nodes["host"], nv.js_value(data), opts)
 
     def _started(self, *args):
@@ -33,6 +36,11 @@ class Player(PlayerTemplate):
         fn = self._hooks.get("ending")
         if fn:
             fn(scene_id)
+
+    def _chose(self, choice_id=None, *args):
+        fn = self._hooks.get("choice")
+        if fn:
+            fn(choice_id)
 
     def stop(self):
         if self.player is not None:

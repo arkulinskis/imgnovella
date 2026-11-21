@@ -174,7 +174,7 @@ def clean_story(data):
     settings.update({"accent": st.get("accent") if HEX.match(str(st.get("accent") or "")) else "#ff4f8b",
                      "cps": int(_num(st.get("cps"), 0, 200, 45)), "credits": _s(st.get("credits"), 1500),
                      "title_img": _field(st.get("title_img"), "img"), "title_music": _s(st.get("title_music"), 30),
-                     "branding": st.get("branding") is not False})
+                     "branding": st.get("branding") is not False, "choice_stats": st.get("choice_stats") is not False})
     scenes = [s for s in (_scene(x) for x in (data.get("scenes") or [])[:400]) if s]
     seen, uniq = set(), []
     for s in scenes:
@@ -221,6 +221,14 @@ def _owned(story_id, user):
     if r is None or (r["owner"] != user and not C.is_admin(user)):
         return None
     return r
+
+
+def choice_counts(r):
+    """stories.choice_counts (added 2026-11-20), guarded so the app works before the schema change is accepted."""
+    try:
+        return dict(r["choice_counts"] or {})
+    except Exception:
+        return {}
 
 
 def first_bg(data):
@@ -297,13 +305,49 @@ def create_story(title, template="blank", orientation="portrait"):
         data = clean_story(DemoStories.cherry())
     else:
         data = blank_story()
+    return C.ok(story=card(_new_row(me, title, data, orientation), me))
+
+
+def _new_row(me, title, data, orientation):
     data["settings"]["orientation"] = "landscape" if orientation == "landscape" else "portrait"
     now = C.now()
-    r = app_tables.stories.add_row(owner=me, slug=new_slug(), title=title, blurb="", genre="", tags=[], rating="Everyone",
-                                   cover="", data=data, published=None, status="draft", stats=story_stats(data), plays=0,
-                                   likes=0, ending_counts={}, featured=False, hidden=False, created=now, updated=now,
-                                   published_at=None, is_demo=False)
-    return C.ok(story=card(r, me))
+    return app_tables.stories.add_row(owner=me, slug=new_slug(), title=title, blurb="", genre="", tags=[], rating="Everyone",
+                                      cover="", data=data, published=None, status="draft", stats=story_stats(data), plays=0,
+                                      likes=0, ending_counts={}, featured=False, hidden=False, created=now, updated=now,
+                                      published_at=None, is_demo=False)
+
+
+@anvil.server.callable(require_user=True)
+def import_twine(title, text, orientation="portrait"):
+    """New novel from a Twine story: Twee source or a published Twine 2 .html (see TwineImport). The title may be
+    empty: then the Twine story's own name is used."""
+    me = C.require_user()
+    if not isinstance(text, str) or not text.strip():
+        return C.fail("Paste your Twee text or choose a Twine file first.")
+    if len(text) > 3 * MAX_JSON:
+        return C.fail("That file is too big to import (over 2.7 MB). Try exporting just the story as Twee.")
+    lim = C.limits(me)
+    if len(app_tables.stories.search(owner=me)) >= lim["novels"]:
+        return C.fail("You have %d novels, the most on the %s plan. Delete one, or go Pro for more." % (lim["novels"], lim["label"]))
+    if C.rate_limited("create_story", 20, 3600):
+        return C.fail("That's a lot of new novels in one hour. Please try again later.")
+    from . import TwineImport
+    try:
+        doc, info = TwineImport.parse(text)
+    except ValueError as e:
+        return C.fail(str(e))
+    except Exception as e:
+        print("import_twine: %r" % e)
+        return C.fail("We couldn't read that Twine story. Try exporting it as Twee (Twine 2: Build -> Export as Twee).")
+    data = clean_story(doc)
+    import json
+    if len(json.dumps(data)) > MAX_JSON:
+        return C.fail("This story is too big for one novel (over 900 KB of text). Split it in Twine first.")
+    title = C.text(title, 80) or C.text(info.get("title"), 80) or "My Twine story"
+    if len(title) < 2:
+        title = "My Twine story"
+    r = _new_row(me, title, data, orientation)
+    return C.ok(story=card(r, me), info=info)
 
 
 def _image(r):
@@ -323,7 +367,7 @@ def get_story(story_id):
     c["changes"] = bool(r["published"]) and r["published"] != r["data"]
     from . import Sounds
     return C.ok(story=c, data=r["data"] or blank_story(), images=[_image(i) for i in imgs], sounds=Sounds.list_for(r),
-                limits=C.limits(r["owner"]), genres=GENRES, ratings=RATINGS)
+                limits=C.limits(r["owner"]), genres=GENRES, ratings=RATINGS, choice_counts=choice_counts(r))
 
 
 @anvil.server.callable(require_user=True)
@@ -498,18 +542,21 @@ def get_play(slug, draft=False):
     liked = me is not None and app_tables.likes.get(user=me, story=r) is not None
     c = card(r, me)
     c["can_edit"] = is_owner
-    return C.ok(story=c, data=data, liked=liked, ending_counts=r["ending_counts"] or {}, draft=bool(draft))
+    counts = {} if draft or (data.get("settings") or {}).get("choice_stats") is False else choice_counts(r)
+    return C.ok(story=c, data=data, liked=liked, ending_counts=r["ending_counts"] or {}, choice_counts=counts, draft=bool(draft))
 
 
 @anvil.server.callable
 def record_play(slug, event, ending_id=None):
-    """Counts a play (once per visit) and each ending reached (once per visit per ending)."""
+    """Counts a play (once per visit), each ending reached and each choice picked (once per visit each)."""
     r = app_tables.stories.get(slug=slug) if isinstance(slug, str) else None
     if r is None or r["status"] not in ("public", "unlisted"):
         return C.ok()
     me = C.me()
     if me is not None and r["owner"] == me:
         return C.ok()  # creators testing their own novel don't count
+    if event == "choice":
+        return _record_choice(r, slug, ending_id)
     done = anvil.server.session.get("played") or []
     key = "%s:%s:%s" % (slug, event, ending_id or "")
     if key in done or C.rate_limited("record_play", 60, 3600):
@@ -521,6 +568,26 @@ def record_play(slug, event, ending_id=None):
         counts = dict(r["ending_counts"] or {})
         counts[ending_id] = int(counts.get(ending_id, 0)) + 1
         r["ending_counts"] = counts
+    return C.ok()
+
+
+def _record_choice(r, slug, choice_id):
+    """How readers chose: +1 for this choice, once per visit, only for a choice that exists in the published story."""
+    if not isinstance(choice_id, str) or not ID.match(choice_id):
+        return C.ok()
+    if not any(c.get("id") == choice_id for s in ((r["published"] or {}).get("scenes") or []) for c in (s.get("choices") or [])):
+        return C.ok()
+    done = anvil.server.session.get("chose") or []
+    key = "%s:%s" % (slug, choice_id)
+    if key in done or C.rate_limited("record_choice", 400, 3600):
+        return C.ok()
+    getattr(anvil.server, "session")["chose"] = (done + [key])[-600:]
+    counts = choice_counts(r)
+    counts[choice_id] = int(counts.get(choice_id, 0)) + 1
+    try:
+        r["choice_counts"] = counts
+    except Exception as e:  # the column arrives with the schema change
+        print("record_choice: %r" % e)
     return C.ok()
 
 

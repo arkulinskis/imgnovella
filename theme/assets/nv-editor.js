@@ -153,8 +153,9 @@
     scenes.forEach(function (s) { byId[s.id] = s; });
     var player = NV.mount(host, data, {
       resolve: NVT.img, storageKey: 'draft-' + meta.slug, meta: { title: meta.title, author: meta.author }, branding: false,
-      startScene: startScene || null,
-      onScene: function (id) { wrap.querySelector('[data-now]').textContent = byId[id] ? byId[id].name : id; }
+      startScene: startScene || null, route: meta.route || null,
+      onScene: function (id) { NVT.covAdd(meta.slug, id); wrap.querySelector('[data-now]').textContent = byId[id] ? byId[id].name : id; },
+      onEnding: function (id) { NVT.covAdd(meta.slug, id, true); }
     });
     var editing = false;
     function vars() {
@@ -307,7 +308,7 @@
 (function () {
   'use strict';
   var esc = UI.esc;
-  var TABS = [['map', 'Map', 'map'], ['write', 'Write', 'edit'], ['cast', 'Cast', 'users'], ['pics', 'Pictures', 'image'], ['sounds', 'Sounds', 'music'], ['vars', 'Variables', 'sliders'], ['settings', 'Settings', 'gear']];
+  var TABS = [['map', 'Map', 'map'], ['write', 'Write', 'edit'], ['cast', 'Cast', 'users'], ['pics', 'Pictures', 'image'], ['sounds', 'Sounds', 'music'], ['vars', 'Variables', 'sliders'], ['routes', 'Routes', 'flag'], ['settings', 'Settings', 'gear']];
   var POS_LABELS = [['farleft', 'Far left'], ['left', 'Left'], ['center', 'Centre'], ['right', 'Right'], ['farright', 'Far right']];
   var ACCENTS = ['#ff4f8b', '#ff9a3c', '#ffd24a', '#3cc6c0', '#8fe3df', '#8a7ad6', '#5b8def', '#2a2238'];
 
@@ -454,9 +455,10 @@
       var body = view.querySelector('[data-body]');
       if (!body) return;
       if (selId && sceneIdx(selId) < 0) selId = null;
-      ({ map: drawMap, write: drawWrite, cast: drawCast, pics: drawPics, sounds: drawSounds, vars: drawVars, settings: drawSettings })[tab](body);
+      ({ map: drawMap, write: drawWrite, cast: drawCast, pics: drawPics, sounds: drawSounds, vars: drawVars, routes: drawRoutes, settings: drawSettings })[tab](body);
       setUrl();
     }
+    function afterPlaytest() { if (tab === 'routes') drawTab(); }
     function goTab(t, sid) { tab = t; if (sid !== undefined) selId = sid; selStep = null; drawTab(); window.scrollTo(0, 0); }
 
     /* ------------------------------------------------------------ MAP */
@@ -901,6 +903,56 @@
     }
 
     /* ------------------------------------------------------------ SETTINGS */
+    /* ------------------------------------------------------------ ROUTES: every ending's shortest route, coverage, how readers chose */
+    function drawRoutes(body) {
+      var routes = NVT.routes(D), cov = NVT.cov(S.story.slug), counts = S.choice_counts || {};
+      var ends = D.scenes.filter(function (s) { return s.ending; });
+      var tested = D.scenes.filter(function (s) { return cov.scenes[s.id]; }).length;
+      var endsHit = ends.filter(function (s) { return (cov.endings || {})[s.id] || cov.scenes[s.id]; }).length;
+      var untested = D.scenes.filter(function (s) { return !cov.scenes[s.id]; });
+      var pct = D.scenes.length ? Math.round(tested * 100 / D.scenes.length) : 0;
+      var kinds = NV.ENDING_KINDS || {};
+      function chip(step) {
+        if (step.kind === 'choice') return '<span>' + esc(NV.plain(step.label || 'a choice', {})) + '</span>';
+        if (step.kind === 'game') return '<span>' + esc(step.label) + '</span>';
+        return '<em>' + (step.kind === 'jump' ? 'jump' : 'then') + '</em>';
+      }
+      var cards = ends.map(function (s) {
+        var path = routes[s.id], hit = (cov.endings || {})[s.id] || cov.scenes[s.id];
+        var picks = path ? path.filter(function (x) { return x.kind === 'choice'; }).length : 0;
+        return '<li class="rt-card' + (hit ? ' done' : '') + '"><h4><span class="ui-badge">' + esc(kinds[s.ending.kind] || 'Ending') + '</span>' + esc(NV.plain(s.ending.title || s.name, {})) +
+          (hit ? ' <span class="ui-badge good">Reached in a playtest</span>' : ' <span class="ui-badge warn">Not reached yet</span>') + '</h4>' +
+          (path ? '<p class="rt-path">' + (path.length ? '<em>Start</em><em>›</em>' + path.map(chip).join('<em>›</em>') : '<em>This is the starting scene</em>') + '</p>' +
+            '<div class="small muted">' + UI.plural(picks, 'choice') + ' to get here' + (path.some(function (x) { return x.kind === 'game'; }) ? ', including a mini-game result' : '') + '</div>'
+            : '<p class="small" style="color:var(--c-bad);margin:0">No way to get here from the starting scene.</p>') +
+          '<div class="rt-acts">' + (path ? '<button class="ui-btn primary sm" data-a="route-walk" data-id="' + esc(s.id) + '">' + UI.icon('play') + 'Walk this route</button>' : '') +
+          '<button class="ui-btn sm" data-a="route-open" data-id="' + esc(s.id) + '">' + UI.icon('edit') + 'Open scene</button></div></li>';
+      }).join('');
+      var split = D.scenes.map(function (s) {
+        var ch = (s.choices || []), total = ch.reduce(function (a, c) { return a + (+counts[c.id] || 0); }, 0);
+        return { s: s, ch: ch, total: total };
+      }).filter(function (x) { return x.ch.length > 1 && x.total > 0; }).sort(function (a, b) { return b.total - a.total; }).slice(0, 12);
+      var splitHtml = split.map(function (x) {
+        return '<li class="rt-card"><h4>' + esc(x.s.name) + ' <span class="small muted">' + UI.plural(x.total, 'pick') + '</span></h4><div class="rt-split">' + x.ch.map(function (c) {
+          var n = +counts[c.id] || 0, p = Math.round(n * 100 / x.total);
+          return '<div><span>' + esc(NV.plain(c.text, {})) + '</span><b>' + p + '%</b><span class="rt-bar"><i style="width:' + p + '%"></i></span></div>';
+        }).join('') + '</div></li>';
+      }).join('');
+      body.innerHTML = '<div class="ed-routes">' +
+        '<div class="rt-head"><div class="rt-stat"><b>' + tested + ' / ' + D.scenes.length + '</b><span>scenes seen in your playtests</span><div class="rt-bar"><i style="width:' + pct + '%"></i></div></div>' +
+        '<div class="rt-stat"><b>' + endsHit + ' / ' + ends.length + '</b><span>endings reached</span><div class="rt-bar"><i style="width:' + (ends.length ? Math.round(endsHit * 100 / ends.length) : 0) + '%"></i></div></div>' +
+        '<div class="rt-stat"><b>' + Object.keys(routes).length + ' / ' + D.scenes.length + '</b><span>scenes reachable from the start</span></div></div>' +
+        '<p class="muted small">Every ending and the shortest way to it. <b>Walk this route</b> opens the playtest and picks the route\'s choices by itself (you still click through the lines). Routes ignore conditions: if a choice is hidden, set the variables in the playtest panel. Coverage is kept in this browser.</p>' +
+        '<h3 class="rt-sec">Endings</h3>' + (ends.length ? '<ul class="rt-list">' + cards + '</ul>' : '<div class="ui-note">' + UI.icon('flag') + ' No endings yet. In Write, open a scene and make it an ending.</div>') +
+        '<h3 class="rt-sec">Not playtested yet</h3>' + (untested.length ? '<ul class="rt-untested">' + untested.slice(0, 60).map(function (s) {
+          return '<li><button type="button" data-a="play-from" data-id="' + esc(s.id) + '" title="Playtest from this scene">' + UI.icon('play') + esc(s.name) + '</button></li>';
+        }).join('') + '</ul>' + (untested.length > 60 ? '<p class="small muted">…and ' + (untested.length - 60) + ' more.</p>' : '') : '<div class="ui-note">' + UI.icon('check') + ' You have seen every scene in a playtest.</div>') +
+        '<div class="rt-acts"><button class="ui-btn sm" data-a="play">' + UI.icon('play') + 'Playtest from the start</button>' + (tested ? '<button class="ui-btn ghost sm" data-a="cov-clear">' + UI.icon('refresh') + 'Forget coverage</button>' : '') + '</div>' +
+        '<h3 class="rt-sec">How readers chose</h3>' + (splitHtml ? '<ul class="rt-list">' + splitHtml + '</ul>' :
+          '<p class="muted small">' + (S.story.status === 'draft' ? 'Publish your novel, and you will see here which choices your readers pick.' : 'No reader choices yet. Each pick on the published novel counts once per visit (yours don\'t count).') + '</p>') +
+        '</div>';
+    }
+
     function drawSettings(body) {
       var st = S.story, set = D.settings;
       body.innerHTML = '<div class="set-grid"><form class="ui-card ui-stack" data-meta><h3>About your novel</h3>' +
@@ -933,6 +985,7 @@
         (st.status === 'draft' ? '<p class="muted">Not published yet. Only you can play it (Playtest).</p>'
           : '<p>' + (st.status === 'public' ? 'Public: listed in Discover.' : 'Unlisted: anyone with the link can play.') + (st.changes ? ' <span class="ui-badge warn">You have unpublished edits</span>' : '') + '</p>' +
           '<div class="share-box"><input type="text" readonly value="' + esc(location.origin + location.pathname + '#play/' + st.slug) + '"><button class="ui-btn" data-a="copy-link">' + UI.icon('copy') + 'Copy</button></div>') +
+        '<label class="ui-check"><input type="checkbox" data-bind="settings.choice_stats" data-type="bool"' + (set.choice_stats !== false ? ' checked' : '') + '> After each choice, show readers how others chose ("38% of readers chose this", once 5 readers have chosen there)</label>' +
         '<div class="ui-row"><button class="ui-btn primary" data-a="publish">' + UI.icon('globe') + (st.status === 'draft' ? 'Publish…' : 'Publish changes…') + '</button>' +
         (st.status === 'draft' ? '' : '<button class="ui-btn" data-a="unpublish">Unpublish</button>') + '</div></div>' +
         '<div class="ui-card ui-stack danger-zone"><h3>Danger zone</h3><p class="muted small">Deleting removes the novel, its pictures, likes and stats. Downloaded copies keep working.</p>' +
@@ -1120,8 +1173,16 @@
           });
           break;
         }
-        case 'play': ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name }, null); break;
-        case 'play-from': ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name }, sid || selId); break;
+        case 'play': ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name }, null, afterPlaytest); break;
+        case 'play-from': ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name }, sid || selId, afterPlaytest); break;
+        case 'route-walk': {
+          var rp = NVT.routes(D)[sid];
+          if (!rp) { UI.toast('There is no way to reach that ending from the start', 'error'); break; }
+          ED.playtest(D, { title: S.story.title, slug: S.story.slug, author: ctx.me.name, route: rp.map(function (x) { return x.choice; }).filter(Boolean) }, D.start, afterPlaytest);
+          break;
+        }
+        case 'route-open': goTab('write', sid); break;
+        case 'cov-clear': NVT.covClear(S.story.slug); drawTab(); UI.toast('Coverage cleared'); break;
         case 'export': ED.exportGame({ story: S.story, data: D, images: S.images, sounds: S.sounds, limits: S.limits, me: ctx.me }); break;
         case 'publish':
           save().then(function () {
